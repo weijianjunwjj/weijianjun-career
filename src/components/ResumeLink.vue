@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { links } from '../data/links'
 import AppIcon from './AppIcon.vue'
-withDefaults(defineProps<{ label?: string }>(), { label: '下载 PDF 简历' })
+withDefaults(defineProps<{ label?: string; compact?: boolean }>(), {
+  label: '下载简历',
+  compact: false,
+})
 </script>
-
 <template>
-  <a v-if="links.resume" class="button button-secondary" :href="links.resume" download
-    ><AppIcon name="download" :size="17" />{{ label }}</a
-  >
-  <span v-else class="resume-placeholder"
-    ><button class="button button-secondary" type="button" disabled title="PDF 简历尚未上传">
-      <AppIcon name="download" :size="17" />{{ label }}</button
-    ><span>PDF 待补充</span></span
-  >
+  <a
+    :class="compact ? 'nav-resume' : 'button button-secondary'"
+    :href="links.resume"
+    download="Wei-Jianjun-Resume.pdf"
+    ><span>{{ label }}</span
+    ><AppIcon name="download" :size="18"
+  /></a>
 </template>

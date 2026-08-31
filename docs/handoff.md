@@ -1,41 +1,29 @@
-# V0.1 Handoff
+# V0.2 本地交接
 
-更新时间：2026-08-31
+更新时间：2026-08-31。
 
-## 已完成
+V0.2 已完成视觉与内容重建，停留在 `feat/v0.2-visual-rebuild` 工作区，待人工审美验收。
+没有提交、推送、合并或部署本轮变更。HEAD / main / origin/main 在检查时均为 `a57fa1a5bf9467e7ba1bf5f7256688908cca845a`。
 
-- 单页职业产品页：Navbar、Hero、三个代表方向、四区能力地图、Why Me、开源与文章、经历概览、Contact CTA、Footer。
-- NovaWing 是最高视觉权重项目；使用本人公开 Showcase 的真实 Final Review 截图，项目页 / Demo / Showcase 均为外链，不在首屏加载视频。
-- 内容数据集中于 `src/data`；组件与 section 不存放需要经常更新的个人履历数据。
-- 手机菜单、键盘 focus、跳过导航、reduced motion、图片 lazy load / decoding、favicon、OG 分享卡片、轻量 SEO 和 Vercel 安全头。
-- PDF 不存在时入口明确显示 “PDF 待补充” 且不可点击，不产生虚假下载。
+## 已交付
 
-## 已验证
+- 深黑蓝底、浅色大字、冷薄荷青点缀的 editorial 视觉系统。
+- BUILD BEYOND FRONTEND. 首屏、NovaWing 真实证据、四阶段能力演化三处视觉核心。
+- 具名企业工程 Case 与 OfferFlow 全栈 AI Case；示意图明确不是产品截图。
+- PDF 中的真实公司、岗位、任职时间、教育、邮箱；统一简历下载与在线阅读。
+- 轻量截图切换、原尺寸预览、按需视频、手机菜单和键盘焦点。
+- 最新 SEO / 分享图、7 项回归测试、四尺寸完整审核截图。
 
-- `pnpm install --frozen-lockfile`：通过。
-- `pnpm build`：通过，包含 `vue-tsc --noEmit`；生产 JS gzip 约 33 KB，CSS gzip 约 5 KB，HTML gzip 不足 1 KB。
-- `pnpm test`：5 / 5 通过；覆盖项目边界、HTTPS 资源、缺失简历、内容结构、分享域名校验和生产产物。
-- 浏览器：390、430、768、1440 四个目标宽度均无横向溢出；390 手机菜单、锚点导航通过；console error / warning 为 0。
-- 外链状态：GitHub 主页、NovaWing Showcase、NovaWing 项目页、掘金专栏均返回 HTTP 200。
-- `pnpm audit --audit-level high`：未发现已知漏洞。
-- 页面不存在失效内部锚点、重复 ID 或缺少 noopener 的新窗口外链，封面图片已加载。
+原先两个展示组件与一张旧派生截图退出公开产物；组件和图片均可从 Git 历史恢复，旧图片另保留在本地忽略的 `.qa/`。原始用户 `assets/` 没有删除或改写。
 
-## 当前外部阻塞
+## 验证与审核材料
 
-- GitHub CLI 未登录，因此没有创建或推送 `weijianjun-career` 远程仓库，也没有 GitHub URL。
-- Vercel CLI 未登录，因此没有创建稳定生产部署，也没有公开 HTTPS URL。
-- 匿名临时部署不作为职业产品页最终链接；登录后应按 README 的部署顺序继续。
+详见 [V0.2 Review](v0.2-review/README.md)；设计决策见 [Design Plan](v0.2-design.md)。
 
-## 尚缺真实内容
+## 必须保留的内容提醒
 
-- 经确认可公开的 PDF 简历。
-- 真实公司、岗位、任职时间与经确认可以公开的代表案例；目前 Experience 是能力阶段概览。
-- 可公开联系方式；当前只提供 GitHub、NovaWing 和技术文章入口。
-- 正式域名；因此 canonical 按需求暂不输出，部署时生成绝对 OG URL，确认正式域名后再固定 canonical。
+下载 PDF 为本人提供的原件，它第三页仍有本轮要求不在主页展示的未完成项目。主页与展示素材已排除；如要求所有下载资料也完全排除，请提供修订 PDF 或授权制作删项公开副本。
 
-## 部署后复核
+现有素材足以支撑此版。可选缺少：OfferFlow 的公开截图/演示、企业项目经授权脱敏的视觉素材。没有为了补图生成虚假后台。
 
-1. 核验 GitHub 仓库只包含本项目公开内容。
-2. 使用生产 URL 打开根页面和 `/og.png`，检查 Vercel 安全头。
-3. 使用无登录窗口核对公开访问、四个外链与分享预览。
-4. 如果补充 PDF，检查下载文件名、内容和隐私脱敏。
+尚未 merge / push main，等待人工视觉验收。

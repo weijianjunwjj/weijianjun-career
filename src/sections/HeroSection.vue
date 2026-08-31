@@ -6,51 +6,51 @@ import ResumeLink from '../components/ResumeLink.vue'
 </script>
 <template>
   <section class="hero container" aria-labelledby="hero-title">
-    <div class="hero-copy">
-      <p class="eyebrow hero-eyebrow">
-        <span class="status-dot"></span>{{ profile.englishName }}
-        <span class="eyebrow-divider">/</span> {{ profile.name }}
-      </p>
-      <h1 id="hero-title">
-        {{ profile.role }}<span class="role-separator"> · </span><br class="desktop-break" /><span
-          class="accent"
-          >{{ profile.focusParts[0] }}</span
-        >{{ profile.focusParts[1] }}<br class="mobile-break" /><span class="accent">{{
-          profile.focusParts[2]
-        }}</span>
-      </h1>
-      <p class="hero-intro">{{ profile.intro }}</p>
-      <p class="hero-description">{{ profile.description }}</p>
-      <ul class="tags hero-tags" aria-label="核心能力">
-        <li v-for="tag in profile.tags" :key="tag">{{ tag }}</li>
-      </ul>
-      <div class="hero-actions">
-        <a class="button button-primary" href="#projects">查看代表项目<AppIcon :size="18" /></a
-        ><ResumeLink /><a
-          class="github-link"
-          :href="links.github"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="GitHub（新窗口打开）"
-          ><AppIcon name="github" />GitHub<AppIcon name="external" :size="15"
-        /></a>
+    <div class="hero-kicker">
+      <p class="eyebrow"><span class="status-dot"></span>工程师 · 构建者 · 问题解决者</p>
+      <span class="decorative">个人作品集 / 2026</span>
+    </div>
+    <div class="hero-grid">
+      <div class="hero-type">
+        <h1 id="hero-title">
+          <span>{{ profile.headline[0] }}</span
+          ><span class="accent">{{ profile.headline[1] }}<i aria-hidden="true">↗</i></span
+          ><span>{{ profile.headline[2] }}</span>
+        </h1>
+        <div class="hero-baseline">
+          <span>前端</span><span aria-hidden="true">→</span><span>全栈</span
+          ><span aria-hidden="true">→</span><span>AI Agent</span>
+        </div>
+      </div>
+      <div class="hero-profile">
+        <p class="hero-name">
+          {{ profile.name }}<span>{{ profile.englishName }}</span>
+        </p>
+        <p class="hero-role">{{ profile.role }}</p>
+        <p class="hero-chinese-role">{{ profile.chineseRole }}</p>
+        <div class="hero-intro">
+          <p>{{ profile.intro }}</p>
+          <p>{{ profile.description }}</p>
+        </div>
+        <p class="experience-signal">
+          <span>{{ profile.experience }}</span
+          ><span>从真实业务，到可信交付</span>
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#work">查看作品<AppIcon :size="20" /></a
+          ><ResumeLink /><a
+            class="hero-github"
+            :href="links.github"
+            target="_blank"
+            rel="noopener noreferrer"
+            ><AppIcon name="github" :size="20" />GitHub<AppIcon name="external" :size="16"
+          /></a>
+        </div>
       </div>
     </div>
-    <aside class="hero-note" aria-label="工程价值主张">
-      <span class="note-index">ENGINEERING PERSPECTIVE</span>
-      <div class="note-line"></div>
-      <p>从界面，<br />到系统，<br />到<span>可信交付。</span></p>
-      <span class="note-caption">Build with intent.<br />Deliver with evidence.</span
-      ><a href="#why">我的工程视角 <AppIcon name="external" :size="18" /></a>
-    </aside>
-    <div class="value-strip">
-      <div v-for="pillar in profile.pillars" :key="pillar.number">
-        <span>{{ pillar.number }}</span>
-        <section>
-          <h2>{{ pillar.title }}</h2>
-          <p>{{ pillar.text }}</p>
-        </section>
-      </div>
+    <div class="hero-end">
+      <span>让作品，先于自我评价。</span
+      ><a href="#work">浏览代表作品<span aria-hidden="true">↓</span></a>
     </div>
   </section>
 </template>

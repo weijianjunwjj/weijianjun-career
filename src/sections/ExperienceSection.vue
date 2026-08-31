@@ -1,26 +1,41 @@
 <script setup lang="ts">
-import { experience, experienceNote } from '../data/experience'
-import { profile } from '../data/profile'
-import SectionHeading from '../components/SectionHeading.vue'
+import { experience, education } from '../data/experience'
 import ResumeLink from '../components/ResumeLink.vue'
 </script>
 <template>
-  <section id="experience" class="section container experience-section">
-    <div class="experience-intro">
-      <SectionHeading number="04" eyebrow="EXPERIENCE" title="来自真实业务，走向更完整的交付。" />
-      <p>{{ profile.experienceSummary }}<br />企业项目积累是基础，AI 工程实践是延伸。</p>
-      <ResumeLink /><small>{{ experienceNote }}</small>
+  <section
+    id="experience"
+    class="experience-section section container"
+    aria-labelledby="experience-title"
+  >
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">职业经历</p>
+        <h2 id="experience-title">在真实业务中，<br />积累工程判断。</h2>
+      </div>
+      <ResumeLink label="完整履历 · 下载 PDF" />
     </div>
-    <ol class="timeline">
-      <li v-for="item in experience" :key="item.stage">
-        <span class="timeline-dot"></span>
-        <p class="timeline-stage">{{ item.stage }}</p>
-        <h3>{{ item.role }}</h3>
-        <p class="timeline-description">{{ item.direction }}</p>
-        <div class="timeline-tags">
-          <span v-for="tag in item.capabilities" :key="tag">{{ tag }}</span>
+    <ol class="experience-list">
+      <li v-for="job in experience" :key="job.company">
+        <div class="experience-date">
+          {{ job.period }}<span>{{ job.role }}</span>
+        </div>
+        <div>
+          <h3>{{ job.company }}</h3>
+          <p class="experience-focus">{{ job.focus }}</p>
+          <p>{{ job.highlights }}</p>
         </div>
       </li>
     </ol>
+    <div class="education-row">
+      <h3>教育背景</h3>
+      <ul>
+        <li v-for="entry in education" :key="entry.school">
+          <strong>{{ entry.school }}</strong
+          ><span>{{ entry.degree }}</span
+          ><span>{{ entry.period }}</span>
+        </li>
+      </ul>
+    </div>
   </section>
 </template>

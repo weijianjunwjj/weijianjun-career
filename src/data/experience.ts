@@ -1,31 +1,33 @@
-export interface Experience {
-  stage: string
-  role: string
-  direction: string
-  capabilities: string[]
-}
-
-// Capability stages, not fabricated employment dates or company names.
-// Replace with verified CV entries when the user supplies them.
-export const experience: Experience[] = [
+export const experience = [
   {
-    stage: '企业项目积累',
-    role: '前端研发',
-    direction: '长期参与复杂企业级 B 端产品研发，在真实业务中积累前端交付能力。',
-    capabilities: ['复杂页面与业务流程', 'Vue / TypeScript'],
+    company: '友谊时光科技股份有限公司',
+    role: '前端开发工程师',
+    period: '2025.08 — 2026.05',
+    focus: '平台技术部 · 游戏数据分析与异常监控',
+    highlights:
+      '负责核心查询、聚合分析与明细下钻；参与字段 schema 建设、数据链路统一及历史系统的渐进治理。',
+    sourcePage: 1,
   },
   {
-    stage: '工程能力拓展',
-    role: '前端架构与全栈交付',
-    direction: '从组件、状态和工程体系，延伸到 Node.js / BFF、服务接口与多系统集成。',
-    capabilities: ['架构与工程化', '端到端交付'],
+    company: '南京递吾件融网络科技有限公司',
+    role: '前端开发工程师',
+    period: '2023.08 — 2025.05',
+    focus: '快递业务平台 · 海外社交电商 · 多端交付',
+    highlights:
+      '交付管理后台与微信小程序，覆盖订单、支付、账单和权限；参与海外社交电商的 IM、定位、登录与支付集成。',
+    sourcePage: 1,
   },
   {
-    stage: 'AI 工程实践',
-    role: 'NovaWing · 个人项目',
-    direction: '围绕 Agent 执行、独立验证、Review 与人类决策构建可验证的研发闭环。',
-    capabilities: ['Agent 工程化', 'Human-in-the-loop'],
+    company: '文思海辉智科科技有限公司无锡分公司',
+    role: 'Web 前端工程师',
+    period: '2019.03 — 2023.07',
+    focus: '售后服务 · 设备物联 · 品牌官网',
+    highlights:
+      '参与 App、客服系统、物联小程序与品牌官网，处理原生能力调用、多端适配、SEO 和性能优化。',
+    sourcePage: 1,
   },
 ]
-
-export const experienceNote = '以能力阶段概览呈现；具体公司、任职时间与完整履历待补充。'
+export const education = [
+  { school: '南京邮电大学', degree: '本科 · 计算机科学与技术', period: '2023 — 2026' },
+  { school: '上海电子信息职业技术学院', degree: '大专 · 移动互联应用技术', period: '2016 — 2019' },
+]

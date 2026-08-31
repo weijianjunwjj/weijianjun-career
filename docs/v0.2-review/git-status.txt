@@ -1,0 +1,39 @@
+## feat/v0.2-visual-rebuild
+ M .env.example
+ M README.md
+ M docs/handoff.md
+ M index.html
+ M package.json
+ M public/favicon.svg
+ D public/novawing-review.webp
+ M public/og.png
+ M scripts/site-meta.ts
+ M src/App.vue
+ M src/components/ResumeLink.vue
+ D src/components/SectionHeading.vue
+ M src/components/SiteNav.vue
+ M src/data/articles.ts
+ M src/data/experience.ts
+ M src/data/links.ts
+ M src/data/profile.ts
+ M src/data/projects.ts
+ M src/data/skills.ts
+ M src/sections.css
+ M src/sections/CapabilitiesSection.vue
+ M src/sections/ContactSection.vue
+ M src/sections/ExperienceSection.vue
+ M src/sections/HeroSection.vue
+ M src/sections/ProjectsSection.vue
+ D src/sections/WhySection.vue
+ M src/sections/WritingSection.vue
+ M src/style.css
+ M tests/content.test.mjs
+?? assets/
+?? docs/v0.2-design.md
+?? docs/v0.2-review/
+?? public/projects/
+?? public/resume/
+?? src/components/MediaDialog.vue
+?? src/components/SiteFooter.vue
+?? src/sections/NovaWingSection.vue
+?? src/sections/WorkIndex.vue
