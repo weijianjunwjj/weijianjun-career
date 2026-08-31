@@ -1,34 +1,52 @@
 <script setup lang="ts">
 import { articles, openSource } from '../data/articles'
-import SectionHeading from '../components/SectionHeading.vue'
+import { links } from '../data/links'
 import AppIcon from '../components/AppIcon.vue'
 </script>
 <template>
-  <section id="writing" class="section container writing-section">
-    <SectionHeading
-      number="03"
-      eyebrow="OPEN SOURCE & WRITING"
-      title="把实践留下，也把思考公开。"
-      description="项目证据与技术表达，是了解一个工程师的另一条路径。"
-    />
-    <div class="writing-list">
-      <a
-        v-for="item in [...articles, ...openSource]"
-        :key="item.href"
-        :href="item.href"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="writing-row"
-        ><div class="writing-source">
-          <span>{{ item.source }}</span
-          ><small>{{ item.type }}</small>
+  <section id="writing" class="writing-section section" aria-labelledby="writing-title">
+    <div class="container">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">开源与文章</p>
+          <h2 id="writing-title">
+            把经验，<span class="writing-title-tail">变成可复用的东西。</span>
+          </h2>
         </div>
-        <div class="writing-content">
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.summary }}</p>
+        <a class="text-link" :href="links.github" target="_blank" rel="noopener noreferrer"
+          >GitHub 主页<AppIcon name="external" :size="17"
+        /></a>
+      </div>
+      <div class="writing-layout">
+        <a
+          v-for="article in articles"
+          :key="article.title"
+          class="writing-feature"
+          :href="article.href"
+          target="_blank"
+          rel="noopener noreferrer"
+          ><p class="writing-type">{{ article.source }} / {{ article.type }}</p>
+          <span class="writing-symbol" aria-hidden="true">{ }</span>
+          <h3>{{ article.title }}</h3>
+          <p>{{ article.summary }}</p>
+          <span class="text-link">{{ article.action }}<AppIcon name="external" :size="18" /></span
+        ></a>
+        <div class="opensource-list">
+          <a
+            v-for="item in openSource"
+            :key="item.title"
+            :href="item.href"
+            target="_blank"
+            rel="noopener noreferrer"
+            ><div>
+              <span class="writing-type">{{ item.type }}</span>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.summary }}</p>
+            </div>
+            <AppIcon name="external" :size="20"
+          /></a>
         </div>
-        <span class="writing-action">{{ item.action }}<AppIcon name="external" :size="21" /></span
-      ></a>
+      </div>
     </div>
   </section>
 </template>

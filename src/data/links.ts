@@ -5,13 +5,11 @@ export const links = {
   novaProject: 'https://weijianjunwjj.github.io/nova-wing-showcase/',
   novaDemo: 'https://weijianjunwjj.github.io/nova-wing-showcase/#demo',
   articles: 'https://juejin.cn/column/7649686982609469475',
-  // Add the real file under public/ before setting this to '/resume.pdf'.
-  resume: null as string | null,
+  resume: '/resume/wei-jianjun-resume.pdf',
 }
-
 export const navigation = [
-  { label: '代表项目', href: '#projects' },
-  { label: '能力地图', href: '#capabilities' },
-  { label: '开源与文章', href: '#writing' },
-  { label: '职业经历', href: '#experience' },
+  { label: '代表作品', accessibleLabel: '代表作品', href: '#work' },
+  { label: '能力演化', accessibleLabel: '能力演化', href: '#evolution' },
+  { label: '职业经历', accessibleLabel: '职业经历', href: '#experience' },
+  { label: '开源与文章', accessibleLabel: '开源与文章', href: '#writing' },
 ]

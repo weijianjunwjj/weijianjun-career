@@ -1,0 +1,176 @@
+{
+  "checkedAt": "2026-08-31T04:10:53.165Z",
+  "branch": "feat/v0.2-visual-rebuild",
+  "head": "a57fa1a5bf9467e7ba1bf5f7256688908cca845a",
+  "buildPassed": true,
+  "testsPassed": 7,
+  "productionDeployed": false,
+  "viewports": [
+    {
+      "name": "mobile-390",
+      "body": "16px",
+      "client": 375,
+      "height": 12702,
+      "hero": "49.875px",
+      "scroll": 375,
+      "smallInformationalText": [],
+      "viewport": [
+        390,
+        844
+      ]
+    },
+    {
+      "name": "mobile-430",
+      "body": "16px",
+      "client": 415,
+      "height": 12375,
+      "hero": "55.195px",
+      "scroll": 415,
+      "smallInformationalText": [],
+      "viewport": [
+        430,
+        932
+      ]
+    },
+    {
+      "name": "tablet-768",
+      "body": "18px",
+      "client": 753,
+      "height": 10722,
+      "hero": "80px",
+      "scroll": 753,
+      "smallInformationalText": [],
+      "viewport": [
+        768,
+        1024
+      ]
+    },
+    {
+      "name": "desktop-1440",
+      "body": "18px",
+      "client": 1425,
+      "height": 10155,
+      "hero": "95.475px",
+      "scroll": 1425,
+      "smallInformationalText": [],
+      "viewport": [
+        1440,
+        900
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "mobile-390.png",
+      "format": "png",
+      "width": 390,
+      "height": 12702,
+      "bytes": 3673609
+    },
+    {
+      "file": "mobile-430.png",
+      "format": "png",
+      "width": 430,
+      "height": 12375,
+      "bytes": 3614373
+    },
+    {
+      "file": "tablet-768.png",
+      "format": "png",
+      "width": 768,
+      "height": 10722,
+      "bytes": 4348732
+    },
+    {
+      "file": "desktop-1440.png",
+      "format": "png",
+      "width": 1440,
+      "height": 10155,
+      "bytes": 5153841
+    }
+  ],
+  "contrast": {
+    "bodyOnBackground": 17.62,
+    "secondaryOnSurface": 8.55,
+    "subtleOnLightestSurface": 5.71,
+    "primaryButton": 12.89
+  },
+  "assets": [
+    {
+      "path": "/favicon.svg",
+      "status": 200,
+      "type": "image/svg+xml",
+      "bytes": 286
+    },
+    {
+      "path": "/og.png",
+      "status": 200,
+      "type": "image/png",
+      "bytes": 1079240
+    },
+    {
+      "path": "/resume/wei-jianjun-resume.pdf",
+      "status": 200,
+      "type": "application/pdf",
+      "bytes": 462734
+    },
+    {
+      "path": "/projects/nova-wing/demo.mp4",
+      "status": 200,
+      "type": "video/mp4",
+      "bytes": 75386754
+    },
+    {
+      "path": "/projects/nova-wing/demo-poster.webp",
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 5640
+    },
+    {
+      "path": "/projects/nova-wing/human-review-660.webp",
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 34030
+    },
+    {
+      "path": "/projects/nova-wing/human-review.webp",
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 79534
+    },
+    {
+      "path": "/projects/nova-wing/recovery-660.webp",
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 8834
+    },
+    {
+      "path": "/projects/nova-wing/recovery.webp",
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 23188
+    },
+    {
+      "path": "/projects/nova-wing/review-660.webp",
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 19254
+    },
+    {
+      "path": "/projects/nova-wing/review.webp",
+      "status": 200,
+      "type": "image/webp",
+      "bytes": 43740
+    }
+  ],
+  "resume": {
+    "bytes": 462734,
+    "downloadMatchesOriginal": true,
+    "sha256": "266d0e114964310ffd796d49435bee70054a781e73882f8d32c7438385a35608"
+  },
+  "consoleAfterFinalReload": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "caveat": "Original resume retained, including the excluded unfinished project on page 3; homepage/SEO/media crops exclude it."
+}
