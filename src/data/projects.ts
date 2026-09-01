@@ -1,4 +1,5 @@
 import { links } from './links.ts'
+import { publicAsset } from '../utils/publicAsset.ts'
 export interface EngineeringCase {
   id: string
   number: string
@@ -43,7 +44,7 @@ export const novaWing = {
       id: 'review',
       title: '执行结束，不代表验收结束。',
       label: '独立 Final Review',
-      image: '/projects/nova-wing/review.webp',
+      image: publicAsset('projects/nova-wing/review.webp'),
       width: 1320,
       height: 570,
       alt: 'NovaWing 执行日志真实局部，显示 Executor、验证和 Final Review 阶段及完成记录',
@@ -54,7 +55,7 @@ export const novaWing = {
       id: 'human',
       title: '需要人的判断，就明确暂停。',
       label: 'Human-in-the-loop',
-      image: '/projects/nova-wing/human-review.webp',
+      image: publicAsset('projects/nova-wing/human-review.webp'),
       width: 1320,
       height: 1190,
       alt: 'NovaWing 真实活动与执行日志局部，显示 HUMAN_REQUIRED、审批请求和批准记录',
@@ -65,7 +66,7 @@ export const novaWing = {
       id: 'recovery',
       title: '中断之后，从可信进度继续。',
       label: 'Checkpoint / Recovery',
-      image: '/projects/nova-wing/recovery.webp',
+      image: publicAsset('projects/nova-wing/recovery.webp'),
       width: 1320,
       height: 314,
       alt: 'NovaWing 真实恢复提示局部，说明 Brain transport 不可用、checkpoint 已保存和恢复后继续',
@@ -74,8 +75,8 @@ export const novaWing = {
     },
   ],
   demo: {
-    src: '/projects/nova-wing/demo.mp4',
-    poster: '/projects/nova-wing/demo-poster.webp',
+    src: publicAsset('projects/nova-wing/demo.mp4'),
+    poster: publicAsset('projects/nova-wing/demo-poster.webp'),
     description: '真实原始录屏 · NovaWing 完整运行过程',
     duration: '13:01',
     originalDuration: '13:01.75',

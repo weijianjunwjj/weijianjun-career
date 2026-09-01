@@ -82,11 +82,11 @@ test('sharing metadata uses confirmed production origin and consistent identity'
   assert.equal(tags.find((t) => t.tag === 'title').children, profile.meta.title)
   assert.equal(
     tags.find((t) => t.attrs?.property === 'og:image').attrs.content,
-    'https://weijianjun-career.vercel.app/og.png',
+    'https://weijianjunwjj.github.io/weijianjun-career/og.png',
   )
   assert.equal(
     tags.find((t) => t.tag === 'link').attrs.href,
-    'https://weijianjun-career.vercel.app/',
+    'https://weijianjunwjj.github.io/weijianjun-career/',
   )
   assert.equal(
     socialTags({ VITE_SITE_URL: 'https://career.example' }).find((t) => t.tag === 'link').attrs
@@ -94,14 +94,21 @@ test('sharing metadata uses confirmed production origin and consistent identity'
     'https://career.example/',
   )
   assert.equal(
-    socialTags({ VERCEL_URL: 'untrusted-preview.example' }).find((t) => t.tag === 'link').attrs
-      .href,
-    'https://weijianjun-career.vercel.app/',
+    socialTags({
+      VERCEL_URL: 'untrusted-preview.example',
+      VERCEL_PROJECT_PRODUCTION_URL: 'weijianjun-career.vercel.app',
+    }).find((t) => t.tag === 'link').attrs.href,
+    'https://weijianjunwjj.github.io/weijianjun-career/',
+  )
+  assert.equal(
+    socialTags({ VITE_SITE_URL: 'https://career.example/subpath' }).find(
+      (t) => t.attrs?.property === 'og:image',
+    ).attrs.content,
+    'https://career.example/subpath/og.png',
   )
   for (const url of [
     'http://career.example',
     'https://user:pass@career.example',
-    'https://career.example/path',
     'https://career.example/?token=value',
   ])
     assert.throws(() => socialTags({ VITE_SITE_URL: url }))

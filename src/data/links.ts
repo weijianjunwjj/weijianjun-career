@@ -1,3 +1,5 @@
+import { publicAsset } from '../utils/publicAsset.ts'
+
 export const links = {
   github: 'https://github.com/weijianjunwjj',
   repositories: 'https://github.com/weijianjunwjj?tab=repositories',
@@ -5,7 +7,7 @@ export const links = {
   novaProject: 'https://weijianjunwjj.github.io/nova-wing-showcase/',
   novaDemo: 'https://weijianjunwjj.github.io/nova-wing-showcase/#demo',
   articles: 'https://juejin.cn/column/7649686982609469475',
-  resume: '/resume/wei-jianjun-resume.pdf',
+  resume: publicAsset('resume/wei-jianjun-resume.pdf'),
 }
 export const navigation = [
   { label: '代表作品', accessibleLabel: '代表作品', href: '#work' },
