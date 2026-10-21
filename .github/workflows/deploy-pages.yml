@@ -43,6 +43,8 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
           VITE_SITE_URL: https://weijianjun.me/
+          # Uploads hidden source maps to Sentry, then deletes them before publishing.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: pnpm build
 
       # Same tests as CI, so nothing reaches production without passing them.
