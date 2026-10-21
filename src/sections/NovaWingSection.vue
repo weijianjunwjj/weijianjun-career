@@ -1,12 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, ref, shallowRef } from 'vue'
 import { novaWing } from '../data/projects'
 import AppIcon from '../components/AppIcon.vue'
-import MediaDialog from '../components/MediaDialog.vue'
+import type MediaDialog from '../components/MediaDialog.vue'
+
+type MediaItem = Parameters<InstanceType<typeof MediaDialog>['open']>[0]
+
+// The dialog is only needed after a click, so its code is a separate chunk
+// fetched on first use instead of shipping with the first screen.
+const dialogComponent = shallowRef<typeof MediaDialog>()
 const media = ref<InstanceType<typeof MediaDialog>>()
 const active = ref(0)
+
+async function openMedia(item: MediaItem) {
+  if (!dialogComponent.value) {
+    dialogComponent.value = (await import('../components/MediaDialog.vue')).default
+    await nextTick()
+  }
+  media.value?.open(item)
+}
+
 const showDemo = () =>
-  media.value?.open({
+  openMedia({
     kind: 'video',
     src: novaWing.demo.src,
     poster: novaWing.demo.poster,
@@ -93,7 +108,7 @@ const showDemo = () =>
               <button
                 class="text-link zoom-button"
                 @click="
-                  media?.open({ kind: 'image', src: item.image, alt: item.alt, title: item.label })
+                  openMedia({ kind: 'image', src: item.image, alt: item.alt, title: item.label })
                 "
               >
                 查看原尺寸 <AppIcon name="external" :size="18" />
@@ -149,6 +164,6 @@ const showDemo = () =>
         ><span class="demo-play"><AppIcon name="play" :size="24" /></span>
       </button>
     </div>
-    <MediaDialog ref="media" />
+    <component :is="dialogComponent" v-if="dialogComponent" ref="media" />
   </section>
 </template>
