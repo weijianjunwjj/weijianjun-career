@@ -14,8 +14,14 @@ export function setupMonitoring(app: App) {
     environment: import.meta.env.PROD ? 'production' : 'development',
     // Same commit as /version.json, so every event points at the exact build.
     release: __COMMIT_SHA__,
-    // Error monitoring only: no IP, cookies or user data, no session replay.
-    sendDefaultPii: false,
+    // Error monitoring only: no user info, cookies, headers, query strings or bodies.
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      urlQueryParams: false,
+      httpBodies: [],
+    },
   })
 
   // Drill hook: visit https://weijianjun.me/#sentry-test to send one test error.
