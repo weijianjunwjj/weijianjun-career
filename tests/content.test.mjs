@@ -130,6 +130,23 @@ test('production artifact contains current metadata, no starter or remote runtim
   ])
     await access(new URL(`../dist${path}`, import.meta.url))
 })
+test('build publishes version.json and stamps the same commit into the bundle', async () => {
+  const raw = await readFile(new URL('../dist/version.json', import.meta.url), 'utf8')
+  const version = JSON.parse(raw)
+  assert.match(version.sha, /^([0-9a-f]{40}|local)$/)
+  // In GitHub Actions the build must report the exact commit being built.
+  if (process.env.GITHUB_SHA) assert.equal(version.sha, process.env.GITHUB_SHA)
+  assert.ok(!Number.isNaN(Date.parse(version.builtAt)))
+  const assetsDir = new URL('../dist/assets/', import.meta.url)
+  const scripts = (await readdir(assetsDir)).filter((name) => name.endsWith('.js'))
+  const bundles = await Promise.all(
+    scripts.map((name) => readFile(new URL(name, assetsDir), 'utf8')),
+  )
+  assert.ok(
+    bundles.some((code) => code.includes(version.sha)),
+    'the footer must show the same commit as version.json',
+  )
+})
 test('demo preloads the complete source recording without autoplay', async () => {
   const component = await readFile(
     new URL('../src/components/MediaDialog.vue', import.meta.url),
