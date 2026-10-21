@@ -82,11 +82,11 @@ test('sharing metadata uses confirmed production origin and consistent identity'
   assert.equal(tags.find((t) => t.tag === 'title').children, profile.meta.title)
   assert.equal(
     tags.find((t) => t.attrs?.property === 'og:image').attrs.content,
-    'https://weijianjunwjj.github.io/weijianjun-career/og.png',
+    'https://weijianjun.me/og.png',
   )
   assert.equal(
     tags.find((t) => t.tag === 'link').attrs.href,
-    'https://weijianjunwjj.github.io/weijianjun-career/',
+    'https://weijianjun.me/',
   )
   assert.equal(
     socialTags({ VITE_SITE_URL: 'https://career.example' }).find((t) => t.tag === 'link').attrs
@@ -98,7 +98,7 @@ test('sharing metadata uses confirmed production origin and consistent identity'
       VERCEL_URL: 'untrusted-preview.example',
       VERCEL_PROJECT_PRODUCTION_URL: 'weijianjun-career.vercel.app',
     }).find((t) => t.tag === 'link').attrs.href,
-    'https://weijianjunwjj.github.io/weijianjun-career/',
+    'https://weijianjun.me/',
   )
   assert.equal(
     socialTags({ VITE_SITE_URL: 'https://career.example/subpath' }).find(

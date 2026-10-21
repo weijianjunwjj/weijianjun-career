@@ -42,7 +42,7 @@ jobs:
       - name: Build
         env:
           GITHUB_PAGES: 'true'
-          VITE_SITE_URL: https://weijianjunwjj.github.io/weijianjun-career/
+          VITE_SITE_URL: https://weijianjun.me/
         run: pnpm build
 
       - name: Upload Pages artifact
