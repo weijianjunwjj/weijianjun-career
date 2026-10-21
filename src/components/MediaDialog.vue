@@ -47,7 +47,7 @@ defineExpose({ open })
       <header class="media-dialog-header">
         <div>
           <h2 id="media-title">{{ current.title }}</h2>
-          <p v-if="current.kind === 'image'">原尺寸真实局部 · 可横向滑动查看细节</p>
+          <p v-if="current.kind === 'image'">原尺寸真实局部 · 可横向滑动查看细节 · 按 Esc 关闭</p>
         </div>
         <button class="dialog-close" autofocus aria-label="关闭预览" @click="close">×</button>
       </header>
