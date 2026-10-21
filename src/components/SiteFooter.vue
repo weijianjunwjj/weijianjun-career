@@ -9,7 +9,7 @@ const commitUrl = /^[0-9a-f]{40}$/.test(commitSha)
 </script>
 <template>
   <footer class="site-footer container">
-    <p>© {{ new Date().getFullYear() }} {{ profile.name }}<span>不止于前端，持续构建。【回滚演练：这是一个坏版本】</span></p>
+    <p>© {{ new Date().getFullYear() }} {{ profile.name }}<span>不止于前端，持续构建。</span></p>
     <div>
       <a :href="links.github" target="_blank" rel="noopener noreferrer">GitHub ↗</a
       ><a :href="links.articles" target="_blank" rel="noopener noreferrer">掘金 ↗</a
