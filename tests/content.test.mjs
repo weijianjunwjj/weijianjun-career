@@ -147,6 +147,18 @@ test('build publishes version.json and stamps the same commit into the bundle', 
     'the footer must show the same commit as version.json',
   )
 })
+test('published bundles never expose source maps', async () => {
+  const assetsDir = new URL('../dist/assets/', import.meta.url)
+  const names = await readdir(assetsDir)
+  assert.deepEqual(
+    names.filter((name) => name.endsWith('.map')),
+    [],
+  )
+  for (const name of names.filter((n) => n.endsWith('.js'))) {
+    const code = await readFile(new URL(name, assetsDir), 'utf8')
+    assert.doesNotMatch(code, /sourceMappingURL=/, `${name} must not point at a source map`)
+  }
+})
 test('demo preloads the complete source recording without autoplay', async () => {
   const component = await readFile(
     new URL('../src/components/MediaDialog.vue', import.meta.url),
