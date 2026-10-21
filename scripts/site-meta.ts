@@ -1,7 +1,7 @@
 import { profile } from '../src/data/profile.ts'
 
 // User-confirmed production URL. Never infer it from request headers.
-const productionUrl = 'https://weijianjunwjj.github.io/weijianjun-career/'
+const productionUrl = 'https://weijianjun.me/'
 export function socialTags(env: Record<string, string | undefined>) {
   const configured = env.VITE_SITE_URL
   const raw = configured || productionUrl

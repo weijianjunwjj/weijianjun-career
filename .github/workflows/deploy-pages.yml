@@ -42,13 +42,20 @@ jobs:
       - name: Build
         env:
           GITHUB_PAGES: 'true'
-          VITE_SITE_URL: https://weijianjunwjj.github.io/weijianjun-career/
+          VITE_SITE_URL: https://weijianjun.me/
         run: pnpm build
+
+      # Same tests as CI, so nothing reaches production without passing them.
+      - name: Test
+        run: pnpm test
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
           path: dist
+          # Keep each build for 30 days (default is 1) so an older deploy job
+          # can be re-run to roll back without rebuilding.
+          retention-days: 30
 
   deploy:
     environment:
