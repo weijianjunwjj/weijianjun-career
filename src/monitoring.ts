@@ -24,10 +24,42 @@ export function setupMonitoring(app: App) {
     },
   })
 
+  recoverFromStaleChunks()
+
   // Drill hook: visit https://weijianjun.me/#sentry-test to send one test error.
   if (location.hash === '#sentry-test') {
     setTimeout(triggerTestError, 0)
   }
+}
+
+// A deploy replaces every file, so a tab opened before it may ask for a chunk that no
+// longer exists. Vite then fires `vite:preloadError`. Report it, then reload once to
+// pick up the new version; the timestamp guard stops a reload loop if the new
+// version is broken too.
+const RELOAD_KEY = 'stale-chunk-reload-at'
+const RELOAD_GUARD_MS = 30_000
+
+function recoverFromStaleChunks() {
+  window.addEventListener('vite:preloadError', (event) => {
+    Sentry.captureException(event.payload, { tags: { kind: 'stale-chunk' } })
+
+    let lastReload = 0
+    try {
+      lastReload = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0)
+    } catch {
+      // Storage can be unavailable (private mode); fall through without reloading twice.
+    }
+    if (Date.now() - lastReload < RELOAD_GUARD_MS) return
+
+    event.preventDefault()
+    try {
+      sessionStorage.setItem(RELOAD_KEY, String(Date.now()))
+    } catch {
+      return
+    }
+    // Give Sentry a moment to send the event before the page goes away.
+    void Sentry.flush(2000).finally(() => location.reload())
+  })
 }
 
 export function triggerTestError(): never {
