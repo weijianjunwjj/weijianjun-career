@@ -52,9 +52,9 @@ export const workOverviewStats = [
     detail: '覆盖微信原生小程序、复杂中后台与微前端数据平台',
   },
   {
-    value: '13 张实拍 + 2 段录屏',
-    label: '真机脱敏与历史后台证据',
-    detail: '含真机微信支付分下单录屏、51 秒后台录屏与扫码小程序码',
+    value: '20 张实拍 + 2 段录屏',
+    label: '真机脱敏、H5 演示与历史后台证据',
+    detail: '含真机支付分录屏、LiveShop 7 屏 App 演示与 51 秒后台录屏',
   },
   {
     value: '100% 边界可核验',
@@ -467,36 +467,196 @@ export const analyticsCase = {
 export const liveshopCase = {
   id: 'liveshop' as const,
   number: '03',
-  tier: '补充案例 · 海外社交电商后台与跨端 App',
+  tier: '双端电商案例 · 海外社交电商 App 与运营后台',
   company: '南京递吾件融网络科技有限公司',
   period: '2023.08 — 2025.05',
-  title: 'LiveShop 海外社交电商管理后台与 uni-app 客户端',
+  title: 'LiveShop 海外社交电商 · uni-app 客户端与运营管理后台',
   subtitle:
-    '覆盖海外社交电商多类型交易后台（商品、拼团、众筹、充值订单、运营活动、社区与系统权限）与移动端社区、电商、登录、支付模块交付。',
-  stack: ['Vue 3', 'TypeScript', 'Pinia', 'Naive UI', 'Vite', 'uni-app', 'OAuth / 跨端支付'],
+    '面向海外用户的「首页发现 + 个人主页 + 社区内容 + 跨境商品」社交电商体系：移动端基于 uni-app（Vue 3 + TS）交付首页、个人主页、登录、社区、商城、商品详情与订单主流程；后台基于 Vue 3 + Naive UI 承载多角色菜单权限、商品规格、运营活动与订单履约。',
+  positioning:
+    'LiveShop 将海外内容社区与商品兑换/交易结合：运营后台配置商品、规格、广告位、预约活动与订单状态，App 端承接海外第三方登录、社区互动、商品选购与多状态订单查询。',
+  stack: [
+    'uni-app (Vue 3)',
+    'TypeScript',
+    'Vite',
+    'UnoCSS',
+    'wot-design-uni',
+    'Pinia',
+    'Naive UI',
+    'Google / X OAuth',
+    'PayPal / Google Play IAP',
+  ],
+  crossEndFlow: [
+    {
+      step: '01',
+      side: '运营后台 → App',
+      title: '商品、广告与活动配置下发',
+      detail:
+        '后台维护商品类目、SKU 规格、广告位（/api/Advertisement）与拼团/众筹预约活动，App 商城（/Product/index）与社区（/activity/booking）实时拉取展示。',
+    },
+    {
+      step: '02',
+      side: 'App 原生桥接',
+      title: '海外登录与双端定位权限',
+      detail:
+        'Google 登录走 uni.login + getUserInfo；X 登录跳转系统浏览器 OAuth 并于 onShow 解析 plus.runtime.arguments；定位永久拒绝按 iOS/Android 跳转系统设置页。',
+    },
+    {
+      step: '03',
+      side: 'App 交易链路',
+      title: '规格选择、建单与海外支付',
+      detail:
+        '商品详情页完成多规格 SKU 与收货地址选择；PayPal 走服务端建单 → uni.requestPayment → capture，钱包充值接入 Android Google Play Billing 原生 .aar 插件。',
+    },
+    {
+      step: '04',
+      side: '运营后台闭环',
+      title: '多状态订单履约与 109 接口覆测',
+      detail:
+        'App 展示 To Pay / To Ship / Shipped / Finished / Returns 五态订单与倒计时；后台按动态 RBAC 菜单执行筛选、退款审核与物流更新（本地 SQLite 已验证 109 唯一接口）。',
+    },
+  ],
+  appEvidenceNote:
+    '以下 7 张移动端界面均由原始 app-live-shop（uni-app Vue 3）源码在本地补齐最小 H5 平台守卫与 Mock 拦截层后，于 390×844 真实浏览器视口运行截取。界面数据为本地合成样本，未连接原公司生产服务，不产生真实 OAuth、支付扣款或 IM 通信。',
+  appEvidence: [
+    {
+      id: 'liveshop-app-home',
+      title: '首页发现流与创作者推荐',
+      tag: '01 首页 · /pages/index',
+      src: publicAsset('evidence/liveshop/app-home.webp'),
+      alt: 'LiveShop uni-app H5 390px 首页截图，展示搜索筛选栏、横向在线用户头像栏与创作者推荐卡片',
+      caption:
+        '整合搜索入口与筛选弹窗（FilterPopup）、横向活跃用户头像栏（UserList）及创作者推荐大卡（RecommendCard），支持在线态、认证标、相册/动态计数与一键进入个人主页；打招呼按钮受网易云信 IM 边界约束在 H5 显式提示。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
+      id: 'liveshop-app-person',
+      title: '用户个人主页与相册/动态双栏',
+      tag: '02 个人主页 · /pages/person-page',
+      src: publicAsset('evidence/liveshop/app-person.webp'),
+      alt: 'LiveShop uni-app H5 390px 个人主页截图，展示顶部背景、头像、在线状态、关注按钮、粉丝统计及 Photos 九宫格',
+      caption:
+        '同时兼容「本人主页（Edit Profile + 相册上传）」与「他人主页（Follow/Followed 切换）」，支持吸顶紧凑头栏、关注/粉丝统计与 Photos / Updates 双 Tab 切换。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
+      id: 'liveshop-app-login',
+      title: '海外第三方登录入口',
+      tag: '03 登录页 · /pages/login',
+      src: publicAsset('evidence/liveshop/app-login.webp'),
+      alt: 'LiveShop uni-app H5 390px 登录页截图，展示品牌视觉、Google 与 X 登录按钮以及 H5 Mock 演示横幅',
+      caption:
+        '读取 /Auth/config 动态渲染 Google 与 X 登录入口；原生端针对 X 授权拦截限制切换系统浏览器 OAuth 并在 onShow 解析回跳参数，H5 演示采用模拟会话流转。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
+      id: 'liveshop-app-community',
+      title: '海外社交动态流与预约活动',
+      tag: '04 社区页 · /pages/community',
+      src: publicAsset('evidence/liveshop/app-community.webp'),
+      alt: 'LiveShop uni-app H5 390px 社区页截图，展示活动广告轮播、拼团/众筹预约卡片、Recommend/Follow 切换与图文动态',
+      caption:
+        '整合广告位轮播（SwiperAd）、后台下发的拼团/众筹预约活动卡片，以及 Recommend / Follow 双流图文动态与本地点赞状态联动。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
+      id: 'liveshop-app-shop',
+      title: '商城类目与商品列表',
+      tag: '05 商城页 · /pages/shop',
+      src: publicAsset('evidence/liveshop/app-shop.webp'),
+      alt: 'LiveShop uni-app H5 390px 商城页截图，展示用户头部、快捷入口、商品类目 Tab 与双列商品卡片',
+      caption:
+        '通过字典接口 GOODS_CLASS 动态加载商品分类 Tab，双列瀑布流展示纯金币、纯积分及积分+金币组合定价商品，保留完整 TabBar 导航结构。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
+      id: 'liveshop-app-detail',
+      title: '商品详情、SKU 规格与地址联动',
+      tag: '06 商品详情 · /pages/shopDetail',
+      src: publicAsset('evidence/liveshop/app-detail.webp'),
+      alt: 'LiveShop uni-app H5 390px 商品详情页截图，展示商品轮播图、价格、规格选择行、海外地址与商品介绍',
+      caption:
+        '支持多图轮播、SKU 规格组合查询（/Product/details/spec）与海外多级收货地址选择弹窗；点击确认时在 H5 演示中显式提示未接真实支付网关。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
+      id: 'liveshop-app-order',
+      title: '五态订单列表与待支付倒计时',
+      tag: '07 订单页 · /pages/order',
+      src: publicAsset('evidence/liveshop/app-order.webp'),
+      alt: 'LiveShop uni-app H5 390px 我的订单页截图，展示 To Pay/To Ship/Shipped/Finished/Returns 五个状态标签、待支付倒计时与取消按钮',
+      caption:
+        '覆盖 To Pay / To Ship / Shipped / Finished / Returns 完整状态分栏，待支付卡片内置倒计时与取消防抖交互，与运营后台订单状态流转形成前后呼应。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+  ] satisfies EvidenceMedia[],
+  crossPlatformPractices: [
+    {
+      label: '工程化架构',
+      value: 'Vue 3 + TS + Vite + UnoCSS',
+      detail: '借助 vite-plugin-uni-pages / layouts 声明式管理 41 个页面路由与分包，统一 wot-design-uni 英文国际化工件。',
+    },
+    {
+      label: '条件编译隔离',
+      value: '#ifdef APP-PLUS / H5',
+      detail: '将原生定位、截屏控制、IM SDK 初始化与 OAuth 回跳严格收口到平台条件分支，使同一份业务源码可编译至 App-Plus 与 H5 演示。',
+    },
+    {
+      label: '统一契约与 Mock 切换',
+      value: 'http.ts 单入口拦截',
+      detail: '全量 84 个移动端 API 统一经 http.ts + request.ts 鉴权收口；H5 演示通过 VITE_H5_MOCK 透明注入合成数据，不污染原生业务路径。',
+    },
+    {
+      label: '原生能力桥接',
+      value: 'Google Play Billing 7.1.1',
+      detail: '通过 uni.requireNativePlugin 接入定制 Android .aar 内购插件，并与 PayPal uni.requestPayment 形成海外双通道支付闭环。',
+    },
+  ],
+  ownership: {
+    ledTitle: '本人主导负责模块',
+    ledItems: [
+      'App 端：海外第三方登录（Google 原生登录、X 系统浏览器 OAuth 与 onShow 回跳参数解析）',
+      'App 端：海外支付与原生能力集成（PayPal 建单/Capture 闭环、Google Play 内购原生插件接入、iOS/Android 定位三态权限与系统设置跳转）',
+      'App 端：首页发现流、个人主页（相册/动态/关注）、社区动态流、商城/商品详情规格选择、五态订单列表与个人中心主流程前端交付',
+      '运营后台：参与 Vue 3 + TypeScript + Pinia + Naive UI 订单、商品、活动及权限菜单前端联调与本地演示接口盘点',
+    ],
+    collabTitle: '团队协作与真实边界（不包装为个人独立开发）',
+    collabItems: [
+      '网易云信 IM 即时通讯（nim-web-sdk-ng）、积分体系与金币账务逻辑由团队协作完成，本人仅参与端侧接入与页面协同，不宣称为个人主导',
+      '原公司线上服务端、海外支付商户密钥与生产数据已脱敏/剥离；H5 App 演示与本地后台 SQLite 均为合成样本，未连接真实交易、支付或 IM 服务',
+      '原生插件（com-yy-liveshop）仅含 Android .aar，iOS 打包及真实内购/OAuth 流程不在本次 H5 演示运行范围内',
+    ],
+  },
   evidenceNote:
-    '下图展示原始历史后台前端界面运行于本地隔离 SQLite 合成样本服务（不含真实线上用户、支付凭据或生产数据），用于验证动态路由、表格筛选与 109 接口路径联调覆盖。',
+    '下图展示原始历史运营后台前端运行于本地隔离 SQLite 合成样本服务（不含真实线上用户、支付凭据或生产数据），用于验证动态路由、表格筛选、退款/物流写入与 109 个唯一接口路径覆测。',
   evidence: [
     {
       id: 'liveshop-orders',
-      title: '商品订单管理 · 金币与积分组合结算',
-      tag: '01 交易订单与权限导航',
+      title: '商品订单管理 · 筛选、发货与退款流转',
+      tag: '运营后台 · 交易订单与权限导航',
       src: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
       alt: 'LiveShop 海外社交电商后台商品订单页面，展示用户 ID、支付金币、支付积分、付款时间、订单状态与动态权限菜单',
-      caption: '涵盖商品/拼团/众筹/充值四类订单视图，结合用户 ID、订单状态与时间窗检索，并支持发货与退款流转。',
+      caption: '涵盖商品/拼团/众筹/充值四类订单视图，结合用户 ID、订单状态与时间窗检索，并支持发货与退款状态持久化。',
       provenance: '原始历史后台界面 · 本地 SQLite 合成样本',
       aspect: 'desktop',
     },
   ] satisfies EvidenceMedia[],
   contractMetrics: [
-    { value: '109 / 109', label: 'TypeScript AST 盘点唯一接口路径', detail: '覆盖订单、商品规格、运营统计与权限菜单' },
-    { value: '动态 RBAC', label: '登录后按菜单动态注入路由', detail: 'router/beforeEach 与后端接口鉴权双向一致' },
-    { value: '双端原生兜底', label: 'X OAuth 回跳 + iOS/Android 定位跳转', detail: 'onShow 解析启动参数，拒绝权限精准导流系统设置' },
+    { value: '109 / 109', label: 'TypeScript AST 盘点后台唯一接口', detail: '覆盖订单、商品规格、运营统计与权限菜单' },
+    { value: '7 屏核心界面', label: 'uni-app H5 Mock 实测恢复', detail: '首页、个人主页、登录、社区、商城、详情、订单零报错通过 390px 验收' },
+    { value: '双端原生兜底', label: 'X OAuth + Play IAP + 定位跳转', detail: 'onShow 解析启动参数，永久拒绝按平台直达系统设置' },
   ],
   decisions: [
     {
       index: '01',
-      title: '动态菜单路由注入与接口覆盖盘点',
+      title: '动态菜单路由注入与 109 接口 AST 覆盖核验',
       problem: '多角色电商运营后台涉及商品、活动、订单、社区与推广 8 大业务域，权限错配或接口契约漂移极易引发线上事故。',
       decision:
         '基于 Vue 3 + Pinia + beforeEach 登录后按菜单动态注册路由，统一 http/request.ts 拦截规范，并通过 TypeScript AST 脚本自动扫描 src/api/ 核验全部 109 个唯一接口路径。',
@@ -506,15 +666,23 @@ export const liveshopCase = {
       index: '02',
       title: '海外 App 第三方 OAuth 登录闭环（uni-app）',
       problem: '海外 X (Twitter) 登录受限于内嵌 WebView 安全策略，无法直接在应用内完成授权。',
-      decision: '将 X 授权切换至系统默认浏览器完成 OAuth，再通过自定义 Scheme 回跳 App，在 App 生命周期 onShow 中解析启动参数完成会话建立。',
-      outcome: '兼容海外账号安全策略，解决内嵌 WebView 拦截导致的登录中断。',
+      decision: '将 X 授权切换至系统默认浏览器完成 OAuth，再通过自定义 Scheme 回跳 App，在 App 生命周期 onShow 中解析 plus.runtime.arguments 的 code/state 完成会话建立。',
+      outcome: '兼容海外账号安全策略，解决内嵌 WebView 拦截导致的登录中断，同时保留 Google 原生 uni.login 路径。',
     },
     {
       index: '03',
-      title: '定位权限永久拒绝的平台差异化兜底',
-      problem: '用户首次点击“不再询问 / 拒绝”后，再次调用定位 API 会静默失败，导致依赖区域的社交与电商功能不可用。',
-      decision: '识别永久拒绝状态后，按 iOS 与 Android 平台差异直接调起对应系统设置页面并给出清晰引导文案。',
-      outcome: '减少海外用户因权限卡死造成的流失，保持多端体验一致性。',
+      title: '海外双通道支付接入：PayPal 与 Google Play 内购插件',
+      problem: '海外商品结算与虚拟充值需分别满足 Web/App PayPal 支付及 Google Play 商店内购合规，且需防止前端伪造成功态。',
+      decision:
+        'PayPal 采用「服务端建单 → 检查设备支持 → uni.requestPayment → 服务端 capture」四步闭环；Android 钱包充值通过 uni.requireNativePlugin 接入定制 GooglePlayBillingModule（.aar）并由服务端二次确认。',
+      outcome: '明确端侧调起与服务端入账的信任边界，避免依赖前端单向回调造成掉单或假成功。',
+    },
+    {
+      index: '04',
+      title: '定位权限永久拒绝的 iOS / Android 差异化兜底',
+      problem: '用户首次点击“不再询问 / 拒绝”后，再次调用定位 API 会静默失败，导致依赖区域推荐的社交与电商功能不可用。',
+      decision: '建立三态定位权限检测，识别永久拒绝后 iOS 调起 app-settings://、Android 通过原生 Intent 跳转 APPLICATION_DETAILS_SETTINGS，跳转失败提供手动设置提示。',
+      outcome: '减少海外用户因权限卡死造成的流失，保持双端体验一致性与异常可恢复性。',
     },
   ] satisfies DecisionCard[],
 }

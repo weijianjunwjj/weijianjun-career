@@ -56,6 +56,10 @@ test('unified career positioning, factual history and zero internal leakage', ()
   assert.equal(novaWing.flow.length, 6)
   assert.equal(novaWing.evidence.length, 3)
   assert.equal(aiCompanions.length, 2)
+  assert.equal(liveshopCase.appEvidence.length, 7)
+  assert.equal(liveshopCase.crossEndFlow.length, 4)
+  assert.ok(liveshopCase.ownership.collabItems.some((item) => item.includes('网易云信 IM')))
+  assert.ok(liveshopCase.appEvidence.every((shot) => shot.provenance.includes('Mock')))
 
   assert.doesNotMatch(
     JSON.stringify({
@@ -208,6 +212,13 @@ test('work subsite dist-work emits all static routes, CNAME, real videos, QR and
     '/evidence/portfolio/ebi-user-query.jpg',
     '/evidence/portfolio/crm-activities.jpg',
     '/evidence/portfolio/liveshop-orders.jpg',
+    '/evidence/liveshop/app-home.webp',
+    '/evidence/liveshop/app-person.webp',
+    '/evidence/liveshop/app-login.webp',
+    '/evidence/liveshop/app-shop.webp',
+    '/evidence/liveshop/app-detail.webp',
+    '/evidence/liveshop/app-order.webp',
+    '/evidence/liveshop/app-community.webp',
   ]) {
     const info = await stat(new URL(`../dist-work${media}`, import.meta.url))
     assert.ok(info.size > 1000, `${media} should be non-empty`)
