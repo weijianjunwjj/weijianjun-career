@@ -131,10 +131,10 @@ const dockCards: {
     id: 'liveshop',
     path: '/projects/liveshop/',
     index: '03',
-    tier: '补充案例',
+    tier: '双端电商案例',
     title: 'LiveShop 海外社交电商',
-    summary: 'Vue 3 + Pinia 动态菜单路由 RBAC · 109 接口路径覆测 · X 浏览器 OAuth 回跳',
-    proof: '历史后台订单截图 · 109 AST 接口覆盖',
+    summary: 'uni-app 海外社区/电商/订单 App + Vue 3 运营后台双端联动 · X OAuth 与 PayPal/Google Play 接入',
+    proof: '5 张 App 界面（H5 Mock）· 后台订单图 · 双端关系图 · 109 API',
   },
 ]
 </script>
