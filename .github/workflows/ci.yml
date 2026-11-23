@@ -39,8 +39,8 @@ jobs:
         run: pnpm check
 
       - name: Build
-        run: pnpm build
+        run: pnpm build:all
 
-      # Some tests read dist/, so they run after the build.
+      # Tests verify both dist/ (main) and dist-work/ (work subsite).
       - name: Test
         run: pnpm test
