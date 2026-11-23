@@ -2,6 +2,7 @@ import { profile } from '../src/data/profile.ts'
 
 // User-confirmed production URL. Never infer it from request headers.
 const productionUrl = 'https://weijianjun.me/'
+
 export function socialTags(env: Record<string, string | undefined>) {
   const configured = env.VITE_SITE_URL
   const raw = configured || productionUrl
@@ -33,7 +34,7 @@ export function socialTags(env: Record<string, string | undefined>) {
       tag: 'meta',
       attrs: {
         property: 'og:image:alt',
-        content: 'BUILD BEYOND FRONTEND. / WEI JIANJUN · Frontend & AI Product Engineer',
+        content: '魏建军 · 高级前端工程师｜AI 应用工程化',
       },
     },
     { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
@@ -42,7 +43,7 @@ export function socialTags(env: Record<string, string | undefined>) {
     { tag: 'meta', attrs: { name: 'twitter:image', content: new URL('og.png', siteUrl).href } },
     {
       tag: 'meta',
-      attrs: { name: 'twitter:image:alt', content: 'BUILD BEYOND FRONTEND. / WEI JIANJUN' },
+      attrs: { name: 'twitter:image:alt', content: '魏建军 · 高级前端工程师｜AI 应用工程化' },
     },
     { tag: 'link', attrs: { rel: 'canonical', href: siteUrl } },
   ]

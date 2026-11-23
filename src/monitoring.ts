@@ -5,16 +5,21 @@ import type { App } from 'vue'
 const dsn =
   'https://7ba96774d71f6793a1324c2e84b0c770@o4512292915511296.ingest.us.sentry.io/4512292959354880'
 
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
+
+export function isLoopbackHost(hostname: string): boolean {
+  return LOOPBACK_HOSTS.has(hostname.toLowerCase())
+}
+
 export function setupMonitoring(app: App) {
+  const isProdRemote = import.meta.env.PROD && !isLoopbackHost(window.location.hostname)
+
   Sentry.init({
     app,
     dsn,
-    // Only the production build reports; local dev stays quiet.
-    enabled: import.meta.env.PROD,
-    environment: import.meta.env.PROD ? 'production' : 'development',
-    // Same commit as /version.json, so every event points at the exact build.
+    enabled: isProdRemote,
+    environment: isProdRemote ? 'production' : 'development',
     release: __COMMIT_SHA__,
-    // Error monitoring only: no user info, cookies, headers, query strings or bodies.
     dataCollection: {
       userInfo: false,
       cookies: false,
@@ -26,16 +31,11 @@ export function setupMonitoring(app: App) {
 
   recoverFromStaleChunks()
 
-  // Drill hook: visit https://weijianjun.me/#sentry-test to send one test error.
   if (location.hash === '#sentry-test') {
     setTimeout(triggerTestError, 0)
   }
 }
 
-// A deploy replaces every file, so a tab opened before it may ask for a chunk that no
-// longer exists. Vite then fires `vite:preloadError`. Report it, then reload once to
-// pick up the new version; the timestamp guard stops a reload loop if the new
-// version is broken too.
 const RELOAD_KEY = 'stale-chunk-reload-at'
 const RELOAD_GUARD_MS = 30_000
 
@@ -47,7 +47,7 @@ function recoverFromStaleChunks() {
     try {
       lastReload = Number(sessionStorage.getItem(RELOAD_KEY) ?? 0)
     } catch {
-      // Storage can be unavailable (private mode); fall through without reloading twice.
+      // Storage unavailable
     }
     if (Date.now() - lastReload < RELOAD_GUARD_MS) return
 
@@ -57,7 +57,6 @@ function recoverFromStaleChunks() {
     } catch {
       return
     }
-    // Give Sentry a moment to send the event before the page goes away.
     void Sentry.flush(2000).finally(() => location.reload())
   })
 }

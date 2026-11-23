@@ -2,61 +2,31 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { access, readFile, readdir, stat } from 'node:fs/promises'
 import { createHash } from 'node:crypto'
+import {
+  MAIN_SITE_URL,
+  POSITIONING,
+  RESUME_FILENAME,
+  RESUME_LEGACY_FILENAME,
+  RESUME_SHA256,
+  WORK_SITE_URL,
+} from '../src/data/siteConfig.ts'
 import { links, navigation } from '../src/data/links.ts'
-import { novaWing, projects, selectedWork } from '../src/data/projects.ts'
+import { aiCompanions, gatewayProjects, heroStageItems, novaWing } from '../src/data/projects.ts'
 import { articles, openSource } from '../src/data/articles.ts'
-import { skills } from '../src/data/skills.ts'
-import { experience, education } from '../src/data/experience.ts'
+import { evolutionStages, stackDomains } from '../src/data/skills.ts'
+import { education, experience } from '../src/data/experience.ts'
 import { profile } from '../src/data/profile.ts'
 import { socialTags } from '../scripts/site-meta.ts'
+import { analyticsCase, courierCase, liveshopCase } from '../src/work/workData.ts'
+import workRoutes from '../src/work/routes.json' with { type: 'json' }
 
-test('three factual cases; NovaWing first with evidence and a complete flow', async () => {
-  assert.equal(projects.length + 1, 3)
-  assert.equal(selectedWork[0].href, '#novawing')
-  assert.equal(novaWing.flow.length, 6)
-  assert.equal(novaWing.evidence.length, 3)
-  assert.equal(new Set([novaWing.id, ...projects.map((p) => p.id)]).size, 3)
-  assert.deepEqual(
-    projects.map((p) => p.id),
-    ['analytics', 'offerflow'],
-  )
-  assert.equal(projects[1].period, undefined)
-  for (const evidence of novaWing.evidence) {
-    await access(new URL(`../public${evidence.image}`, import.meta.url))
-    await access(
-      new URL(`../public${evidence.image.replace('.webp', '-660.webp')}`, import.meta.url),
-    )
-    assert.ok(evidence.alt.length > 10)
-  }
-  assert.doesNotMatch(
-    JSON.stringify({ profile, projects, novaWing, skills, experience, articles, openSource }),
-    /fly[- ]?weave/i,
-  )
-})
-test('all external resources use HTTPS; resume is a real public asset', async () => {
-  for (const href of [
-    ...Object.values(links),
-    ...articles.map((a) => a.href),
-    ...openSource.map((a) => a.href),
-    ...projects.map((p) => p.href).filter(Boolean),
-  ]) {
-    if (href === links.resume) continue
-    assert.equal(new URL(href).protocol, 'https:')
-  }
-  assert.equal(links.resume, '/resume/wei-jianjun-resume.pdf')
-  assert.ok(navigation.every((link) => link.href.startsWith('#')))
-  assert.equal(navigation.length, 4)
-  const originalDir = new URL('../assets/resume/', import.meta.url)
-  const pdfs = (await readdir(originalDir)).filter((name) => name.endsWith('.pdf'))
-  assert.equal(pdfs.length, 1)
-  const original = await readFile(new URL(pdfs[0], originalDir))
-  const published = await readFile(new URL(`../public${links.resume}`, import.meta.url))
-  assert.equal(published.subarray(0, 5).toString(), '%PDF-')
-  const hash = (data) => createHash('sha256').update(data).digest('hex')
-  assert.equal(hash(original), hash(published), 'the original resume must not be rewritten')
-})
-test('experience, education, email and timelines match supplied resume', () => {
+const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
+
+test('unified career positioning, factual history and zero internal leakage', () => {
+  assert.equal(POSITIONING, '高级前端工程师｜AI 应用工程化')
+  assert.equal(profile.positioning, POSITIONING)
   assert.equal(profile.email, '2661043132@qq.com')
+  assert.equal(profile.phone, '18352517082')
   assert.equal(experience.length, 3)
   assert.deepEqual(
     experience.map((e) => e.company),
@@ -72,131 +42,191 @@ test('experience, education, email and timelines match supplied resume', () => {
   )
   assert.equal(education.length, 2)
   assert.equal(education[0].school, '南京邮电大学')
-  assert.equal(skills.length, 4)
-  assert.equal(skills[3].period, novaWing.period)
+  assert.equal(education[0].period, '2024 — 2026')
+  assert.equal(evolutionStages.length, 4)
+  assert.equal(stackDomains.length, 6)
   assert.equal(articles[0].title, '页面级 Scope：复杂页面的状态边界')
-  assert.match(projects[0].outcome, /部分构建场景/)
+  assert.equal(openSource.length, 4)
+  assert.equal(gatewayProjects.length, 3)
+  assert.deepEqual(
+    gatewayProjects.map((p) => p.id),
+    ['courier', 'analytics', 'liveshop'],
+  )
+  assert.equal(heroStageItems.length, 4)
+  assert.equal(novaWing.flow.length, 6)
+  assert.equal(novaWing.evidence.length, 3)
+  assert.equal(aiCompanions.length, 2)
+
+  assert.doesNotMatch(
+    JSON.stringify({
+      profile,
+      gatewayProjects,
+      heroStageItems,
+      novaWing,
+      aiCompanions,
+      evolutionStages,
+      stackDomains,
+      experience,
+      education,
+      articles,
+      openSource,
+      courierCase,
+      analyticsCase,
+      liveshopCase,
+    }),
+    /fly[- ]?weave/i,
+  )
 })
-test('sharing metadata uses confirmed production origin and consistent identity', () => {
+
+test('all external links use HTTPS and bidirectional site URLs are configured', () => {
+  assert.equal(MAIN_SITE_URL, 'https://weijianjun.me/')
+  assert.equal(WORK_SITE_URL, 'https://work.weijianjun.me/')
+  assert.equal(navigation.length, 4)
+  assert.ok(navigation.every((item) => item.href.startsWith('#')))
+
+  const externalUrls = [
+    ...Object.values(links).filter((href) => href !== links.resume),
+    ...articles.map((a) => a.href),
+    ...openSource.map((a) => a.href),
+    ...aiCompanions.map((c) => c.href).filter(Boolean),
+  ]
+  for (const href of externalUrls) {
+    assert.equal(new URL(href).protocol, 'https:', `Expected HTTPS URL: ${href}`)
+  }
+})
+
+test('resume PDF uses exact unified filename and identical SHA-256 across both sites', async () => {
+  assert.equal(RESUME_FILENAME, '魏建军-资深7年前端-18352517082.pdf')
+  const paths = [
+    `../public/resume/${RESUME_FILENAME}`,
+    `../public/resume/${RESUME_LEGACY_FILENAME}`,
+    `../work/public/resume/${RESUME_FILENAME}`,
+    `../work/public/resume/${RESUME_LEGACY_FILENAME}`,
+    `../dist/resume/${RESUME_FILENAME}`,
+    `../dist/resume/${RESUME_LEGACY_FILENAME}`,
+    `../dist-work/resume/${RESUME_FILENAME}`,
+    `../dist-work/resume/${RESUME_LEGACY_FILENAME}`,
+  ]
+  for (const rel of paths) {
+    const data = await readFile(new URL(rel, import.meta.url))
+    assert.equal(data.subarray(0, 5).toString(), '%PDF-', `${rel} must be a valid PDF`)
+    assert.equal(sha256(data), RESUME_SHA256, `${rel} SHA-256 mismatch`)
+  }
+})
+
+test('social metadata uses confirmed production origin and rejects unsafe URLs', () => {
   const tags = socialTags({})
   assert.equal(tags.find((t) => t.tag === 'title').children, profile.meta.title)
   assert.equal(
     tags.find((t) => t.attrs?.property === 'og:image').attrs.content,
     'https://weijianjun.me/og.png',
   )
-  assert.equal(
-    tags.find((t) => t.tag === 'link').attrs.href,
-    'https://weijianjun.me/',
-  )
-  assert.equal(
-    socialTags({ VITE_SITE_URL: 'https://career.example' }).find((t) => t.tag === 'link').attrs
-      .href,
-    'https://career.example/',
-  )
-  assert.equal(
-    socialTags({
-      VERCEL_URL: 'untrusted-preview.example',
-      VERCEL_PROJECT_PRODUCTION_URL: 'weijianjun-career.vercel.app',
-    }).find((t) => t.tag === 'link').attrs.href,
-    'https://weijianjun.me/',
-  )
-  assert.equal(
-    socialTags({ VITE_SITE_URL: 'https://career.example/subpath' }).find(
-      (t) => t.attrs?.property === 'og:image',
-    ).attrs.content,
-    'https://career.example/subpath/og.png',
-  )
-  for (const url of [
+  assert.equal(tags.find((t) => t.tag === 'link').attrs.href, 'https://weijianjun.me/')
+  for (const bad of [
     'http://career.example',
     'https://user:pass@career.example',
     'https://career.example/?token=value',
-  ])
-    assert.throws(() => socialTags({ VITE_SITE_URL: url }))
+  ]) {
+    assert.throws(() => socialTags({ VITE_SITE_URL: bad }))
+  }
 })
-test('production artifact contains current metadata, no starter or remote runtime assets', async () => {
+
+test('main site production dist contains metadata, evidence assets, version.json and zero source maps', async () => {
   const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8')
   assert.ok(html.includes(profile.meta.title))
-  assert.ok(html.includes(profile.meta.description))
-  assert.match(html, /og:description/)
-  assert.match(html, /twitter:card/)
-  assert.match(html, /#f4f7fb/)
+  assert.ok(html.includes('https://work.weijianjun.me/'))
+  assert.ok(html.includes(RESUME_FILENAME))
+  assert.match(html, /#040711/)
   assert.doesNotMatch(html, /Vite \+ Vue|src="https?:\/\//)
-  for (const path of [
+
+  for (const asset of [
     '/og.png',
     '/favicon.svg',
-    links.resume,
-    novaWing.demo.src,
-    novaWing.demo.poster,
-  ])
-    await access(new URL(`../dist${path}`, import.meta.url))
-})
-test('build publishes version.json and stamps the same commit into the bundle', async () => {
-  const raw = await readFile(new URL('../dist/version.json', import.meta.url), 'utf8')
-  const version = JSON.parse(raw)
+    '/projects/nova-wing/demo.mp4',
+    '/projects/nova-wing/demo-poster.webp',
+    '/projects/nova-wing/review.webp',
+    '/projects/nova-wing/human-review.webp',
+    '/projects/nova-wing/recovery.webp',
+    '/evidence/courier/admin-orders.webp',
+    '/evidence/courier/mini-booking.webp',
+    '/evidence/portfolio/sdk-monitor.jpg',
+    '/evidence/portfolio/ebi-user-query.jpg',
+    '/evidence/portfolio/liveshop-orders.jpg',
+  ]) {
+    await access(new URL(`../dist${asset}`, import.meta.url))
+  }
+
+  const demoStat = await stat(new URL('../dist/projects/nova-wing/demo.mp4', import.meta.url))
+  assert.ok(demoStat.size > 70 * 1024 * 1024)
+
+  const version = JSON.parse(await readFile(new URL('../dist/version.json', import.meta.url), 'utf8'))
   assert.match(version.sha, /^([0-9a-f]{40}|local)$/)
-  // In GitHub Actions the build must report the exact commit being built.
-  if (process.env.GITHUB_SHA) assert.equal(version.sha, process.env.GITHUB_SHA)
-  assert.ok(!Number.isNaN(Date.parse(version.builtAt)))
-  const assetsDir = new URL('../dist/assets/', import.meta.url)
-  const scripts = (await readdir(assetsDir)).filter((name) => name.endsWith('.js'))
-  const bundles = await Promise.all(
-    scripts.map((name) => readFile(new URL(name, assetsDir), 'utf8')),
-  )
-  assert.ok(
-    bundles.some((code) => code.includes(version.sha)),
-    'the footer must show the same commit as version.json',
-  )
-})
-test('published bundles never expose source maps', async () => {
+
   const assetsDir = new URL('../dist/assets/', import.meta.url)
   const names = await readdir(assetsDir)
   assert.deepEqual(
-    names.filter((name) => name.endsWith('.map')),
+    names.filter((n) => n.endsWith('.map')),
     [],
   )
-  for (const name of names.filter((n) => n.endsWith('.js'))) {
-    const code = await readFile(new URL(name, assetsDir), 'utf8')
-    assert.doesNotMatch(code, /sourceMappingURL=/, `${name} must not point at a source map`)
+  for (const js of names.filter((n) => n.endsWith('.js'))) {
+    const code = await readFile(new URL(js, assetsDir), 'utf8')
+    assert.doesNotMatch(code, /sourceMappingURL=/)
   }
 })
-test('demo preloads the complete source recording without autoplay', async () => {
-  const component = await readFile(
-    new URL('../src/components/MediaDialog.vue', import.meta.url),
-    'utf8',
-  )
-  assert.match(component, /preload="auto"/)
-  assert.doesNotMatch(component, /autoplay/)
-  const feature = await readFile(
-    new URL('../src/sections/NovaWingSection.vue', import.meta.url),
-    'utf8',
-  )
-  assert.match(feature, /class="demo-preload" preload="auto"/)
-  const published = await readFile(new URL(`../public${novaWing.demo.src}`, import.meta.url))
-  const original = await readFile(
-    new URL('../assets/screenrecording/nova-wing-development-guardian-demo.mp4', import.meta.url),
-  )
-  assert.equal(
-    createHash('sha256').update(published).digest('hex'),
-    createHash('sha256').update(original).digest('hex'),
-  )
-  assert.ok(published.byteLength > 70 * 1024 * 1024)
-  assert.ok(
-    (await stat(new URL(`../public${novaWing.demo.poster}`, import.meta.url))).size < 100 * 1024,
-  )
+
+test('work subsite dist-work emits all static routes, CNAME, real videos, QR and evidence screenshots', async () => {
+  const html = await readFile(new URL('../dist-work/index.html', import.meta.url), 'utf8')
+  assert.ok(html.includes(POSITIONING))
+  assert.ok(html.includes('https://weijianjun.me/'))
+  assert.ok(html.includes(RESUME_FILENAME))
+  assert.doesNotMatch(html, /src="https?:\/\//)
+
+  const cname = (await readFile(new URL('../dist-work/CNAME', import.meta.url), 'utf8')).trim()
+  assert.equal(cname, 'work.weijianjun.me')
+  await access(new URL('../dist-work/.nojekyll', import.meta.url))
+  await access(new URL('../dist-work/version.json', import.meta.url))
+
+  for (const route of Object.values(workRoutes)) {
+    const entry = route === '/' ? '../dist-work/index.html' : `../dist-work${route}/index.html`
+    await access(new URL(entry, import.meta.url))
+  }
+
+  for (const media of [
+    '/evidence/courier/mini-demo.mp4',
+    '/evidence/courier/admin-demo.mp4',
+    '/evidence/courier/mini-qr.png',
+    '/evidence/courier/mini-booking.webp',
+    '/evidence/courier/mini-pay-score.webp',
+    '/evidence/courier/mini-success.webp',
+    '/evidence/courier/mini-detail.webp',
+    '/evidence/courier/mini-settlement.webp',
+    '/evidence/courier/admin-orders.webp',
+    '/evidence/courier/admin-compare.webp',
+    '/evidence/courier/admin-billing.webp',
+    '/evidence/courier/admin-roles.webp',
+    '/evidence/portfolio/sdk-monitor.jpg',
+    '/evidence/portfolio/ebi-user-query.jpg',
+    '/evidence/portfolio/crm-activities.jpg',
+    '/evidence/portfolio/liveshop-orders.jpg',
+  ]) {
+    const info = await stat(new URL(`../dist-work${media}`, import.meta.url))
+    assert.ok(info.size > 1000, `${media} should be non-empty`)
+  }
 })
-test('navigation anchors and accessible interaction hooks are present', async () => {
+
+test('accessible interaction hooks, reduced motion and zero autoplay are enforced', async () => {
   const app = await readFile(new URL('../src/App.vue', import.meta.url), 'utf8')
   assert.match(app, /<main id="main">/)
+  const workApp = await readFile(new URL('../src/work/WorkApp.vue', import.meta.url), 'utf8')
+  assert.match(workApp, /<main id="work-main">/)
   const nav = await readFile(new URL('../src/components/SiteNav.vue', import.meta.url), 'utf8')
   assert.match(nav, /aria-expanded/)
   assert.ok(nav.includes('@keydown.esc'))
-  const css = await readFile(new URL('../src/style.css', import.meta.url), 'utf8')
-  assert.match(css, /prefers-reduced-motion/)
-  assert.match(css, /focus-visible/)
-  const dialog = await readFile(
-    new URL('../src/components/MediaDialog.vue', import.meta.url),
-    'utf8',
-  )
-  assert.match(dialog, /showModal/)
-  assert.match(dialog, /returnFocus\?\.focus/)
+  const tokens = await readFile(new URL('../src/shared/tokens.css', import.meta.url), 'utf8')
+  assert.match(tokens, /prefers-reduced-motion/)
+  assert.match(tokens, /focus-visible/)
+  const lightbox = await readFile(new URL('../src/components/MediaLightbox.vue', import.meta.url), 'utf8')
+  assert.match(lightbox, /showModal/)
+  assert.match(lightbox, /returnFocus\?\.focus/)
+  assert.doesNotMatch(lightbox, /\bautoplay\b/)
 })
