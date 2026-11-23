@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
   return {
     root: resolve(projectRoot, 'work'),
     base: '/',
+    cacheDir: resolve(projectRoot, 'node_modules/.vite-work'),
     publicDir: resolve(projectRoot, 'work/public'),
     build: {
       outDir,
