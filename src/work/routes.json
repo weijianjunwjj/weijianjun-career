@@ -1,0 +1,8 @@
+{
+  "home": "/",
+  "courier": "/projects/courier",
+  "courierMini": "/projects/courier/mini",
+  "courierAdmin": "/projects/courier/admin",
+  "analytics": "/projects/analytics",
+  "liveshop": "/projects/liveshop"
+}
