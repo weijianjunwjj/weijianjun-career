@@ -134,7 +134,7 @@ const dockCards: {
     tier: '双端电商案例',
     title: 'LiveShop 海外社交电商',
     summary: 'uni-app 海外社区/电商/订单 App + Vue 3 运营后台双端联动 · X OAuth 与 PayPal/Google Play 接入',
-    proof: '5 张 App 界面（H5 Mock）· 后台订单图 · 双端关系图 · 109 API',
+    proof: '7 张 App 界面（H5 Mock）· 后台订单图 · 双端关系图 · 109 API',
   },
 ]
 </script>

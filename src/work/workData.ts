@@ -52,9 +52,9 @@ export const workOverviewStats = [
     detail: '覆盖微信原生小程序、复杂中后台与微前端数据平台',
   },
   {
-    value: '18 张实拍 + 2 段录屏',
+    value: '20 张实拍 + 2 段录屏',
     label: '真机脱敏、H5 演示与历史后台证据',
-    detail: '含真机支付分录屏、LiveShop 5 屏 App 演示与 51 秒后台录屏',
+    detail: '含真机支付分录屏、LiveShop 7 屏 App 演示与 51 秒后台录屏',
   },
   {
     value: '100% 边界可核验',
@@ -472,7 +472,7 @@ export const liveshopCase = {
   period: '2023.08 — 2025.05',
   title: 'LiveShop 海外社交电商 · uni-app 客户端与运营管理后台',
   subtitle:
-    '面向海外用户的「社区内容 + 活动预约 + 跨境商品」社交电商体系：移动端基于 uni-app（Vue 3 + TS）交付登录、社区、商城、商品详情与订单主流程；后台基于 Vue 3 + Naive UI 承载多角色菜单权限、商品规格、运营活动与订单履约。',
+    '面向海外用户的「首页发现 + 个人主页 + 社区内容 + 跨境商品」社交电商体系：移动端基于 uni-app（Vue 3 + TS）交付首页、个人主页、登录、社区、商城、商品详情与订单主流程；后台基于 Vue 3 + Naive UI 承载多角色菜单权限、商品规格、运营活动与订单履约。',
   positioning:
     'LiveShop 将海外内容社区与商品兑换/交易结合：运营后台配置商品、规格、广告位、预约活动与订单状态，App 端承接海外第三方登录、社区互动、商品选购与多状态订单查询。',
   stack: [
@@ -517,12 +517,34 @@ export const liveshopCase = {
     },
   ],
   appEvidenceNote:
-    '以下 5 张移动端界面均由原始 app-live-shop（uni-app Vue 3）源码在本地补齐最小 H5 平台守卫与 Mock 拦截层后，于 390×844 真实浏览器视口运行截取。界面数据为本地合成样本，未连接原公司生产服务，不产生真实 OAuth、支付扣款或 IM 通信。',
+    '以下 7 张移动端界面均由原始 app-live-shop（uni-app Vue 3）源码在本地补齐最小 H5 平台守卫与 Mock 拦截层后，于 390×844 真实浏览器视口运行截取。界面数据为本地合成样本，未连接原公司生产服务，不产生真实 OAuth、支付扣款或 IM 通信。',
   appEvidence: [
+    {
+      id: 'liveshop-app-home',
+      title: '首页发现流与创作者推荐',
+      tag: '01 首页 · /pages/index',
+      src: publicAsset('evidence/liveshop/app-home.webp'),
+      alt: 'LiveShop uni-app H5 390px 首页截图，展示搜索筛选栏、横向在线用户头像栏与创作者推荐卡片',
+      caption:
+        '整合搜索入口与筛选弹窗（FilterPopup）、横向活跃用户头像栏（UserList）及创作者推荐大卡（RecommendCard），支持在线态、认证标、相册/动态计数与一键进入个人主页；打招呼按钮受网易云信 IM 边界约束在 H5 显式提示。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
+      id: 'liveshop-app-person',
+      title: '用户个人主页与相册/动态双栏',
+      tag: '02 个人主页 · /pages/person-page',
+      src: publicAsset('evidence/liveshop/app-person.webp'),
+      alt: 'LiveShop uni-app H5 390px 个人主页截图，展示顶部背景、头像、在线状态、关注按钮、粉丝统计及 Photos 九宫格',
+      caption:
+        '同时兼容「本人主页（Edit Profile + 相册上传）」与「他人主页（Follow/Followed 切换）」，支持吸顶紧凑头栏、关注/粉丝统计与 Photos / Updates 双 Tab 切换。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
     {
       id: 'liveshop-app-login',
       title: '海外第三方登录入口',
-      tag: '01 登录页 · /pages/login',
+      tag: '03 登录页 · /pages/login',
       src: publicAsset('evidence/liveshop/app-login.webp'),
       alt: 'LiveShop uni-app H5 390px 登录页截图，展示品牌视觉、Google 与 X 登录按钮以及 H5 Mock 演示横幅',
       caption:
@@ -531,9 +553,20 @@ export const liveshopCase = {
       aspect: 'phone',
     },
     {
+      id: 'liveshop-app-community',
+      title: '海外社交动态流与预约活动',
+      tag: '04 社区页 · /pages/community',
+      src: publicAsset('evidence/liveshop/app-community.webp'),
+      alt: 'LiveShop uni-app H5 390px 社区页截图，展示活动广告轮播、拼团/众筹预约卡片、Recommend/Follow 切换与图文动态',
+      caption:
+        '整合广告位轮播（SwiperAd）、后台下发的拼团/众筹预约活动卡片，以及 Recommend / Follow 双流图文动态与本地点赞状态联动。',
+      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      aspect: 'phone',
+    },
+    {
       id: 'liveshop-app-shop',
       title: '商城类目与商品列表',
-      tag: '02 商城页 · /pages/shop',
+      tag: '05 商城页 · /pages/shop',
       src: publicAsset('evidence/liveshop/app-shop.webp'),
       alt: 'LiveShop uni-app H5 390px 商城页截图，展示用户头部、快捷入口、商品类目 Tab 与双列商品卡片',
       caption:
@@ -544,7 +577,7 @@ export const liveshopCase = {
     {
       id: 'liveshop-app-detail',
       title: '商品详情、SKU 规格与地址联动',
-      tag: '03 商品详情 · /pages/shopDetail',
+      tag: '06 商品详情 · /pages/shopDetail',
       src: publicAsset('evidence/liveshop/app-detail.webp'),
       alt: 'LiveShop uni-app H5 390px 商品详情页截图，展示商品轮播图、价格、规格选择行、海外地址与商品介绍',
       caption:
@@ -555,22 +588,11 @@ export const liveshopCase = {
     {
       id: 'liveshop-app-order',
       title: '五态订单列表与待支付倒计时',
-      tag: '04 订单页 · /pages/order',
+      tag: '07 订单页 · /pages/order',
       src: publicAsset('evidence/liveshop/app-order.webp'),
       alt: 'LiveShop uni-app H5 390px 我的订单页截图，展示 To Pay/To Ship/Shipped/Finished/Returns 五个状态标签、待支付倒计时与取消按钮',
       caption:
         '覆盖 To Pay / To Ship / Shipped / Finished / Returns 完整状态分栏，待支付卡片内置倒计时与取消防抖交互，与运营后台订单状态流转形成前后呼应。',
-      provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
-      aspect: 'phone',
-    },
-    {
-      id: 'liveshop-app-community',
-      title: '海外社交动态流与预约活动',
-      tag: '05 社区页 · /pages/community',
-      src: publicAsset('evidence/liveshop/app-community.webp'),
-      alt: 'LiveShop uni-app H5 390px 社区页截图，展示活动广告轮播、拼团/众筹预约卡片、Recommend/Follow 切换与图文动态',
-      caption:
-        '整合广告位轮播（SwiperAd）、后台下发的拼团/众筹预约活动卡片，以及 Recommend / Follow 双流图文动态与本地点赞状态联动。',
       provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
       aspect: 'phone',
     },
@@ -602,7 +624,7 @@ export const liveshopCase = {
     ledItems: [
       'App 端：海外第三方登录（Google 原生登录、X 系统浏览器 OAuth 与 onShow 回跳参数解析）',
       'App 端：海外支付与原生能力集成（PayPal 建单/Capture 闭环、Google Play 内购原生插件接入、iOS/Android 定位三态权限与系统设置跳转）',
-      'App 端：社区动态流、商城/商品详情规格选择、五态订单列表与个人中心主流程前端交付',
+      'App 端：首页发现流、个人主页（相册/动态/关注）、社区动态流、商城/商品详情规格选择、五态订单列表与个人中心主流程前端交付',
       '运营后台：参与 Vue 3 + TypeScript + Pinia + Naive UI 订单、商品、活动及权限菜单前端联调与本地演示接口盘点',
     ],
     collabTitle: '团队协作与真实边界（不包装为个人独立开发）',
@@ -628,7 +650,7 @@ export const liveshopCase = {
   ] satisfies EvidenceMedia[],
   contractMetrics: [
     { value: '109 / 109', label: 'TypeScript AST 盘点后台唯一接口', detail: '覆盖订单、商品规格、运营统计与权限菜单' },
-    { value: '4 核心流程 · 5 屏', label: 'uni-app H5 Mock 实测恢复', detail: '登录、商城、详情、订单、社区零报错通过 390px 验收' },
+    { value: '7 屏核心界面', label: 'uni-app H5 Mock 实测恢复', detail: '首页、个人主页、登录、社区、商城、详情、订单零报错通过 390px 验收' },
     { value: '双端原生兜底', label: 'X OAuth + Play IAP + 定位跳转', detail: 'onShow 解析启动参数，永久拒绝按平台直达系统设置' },
   ],
   decisions: [

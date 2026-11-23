@@ -57,7 +57,7 @@ function openGallery(list: EvidenceMedia[], startIndex: number, event: MouseEven
               :class="{ 'is-active': activeView === 'app' }"
               @click="activeView = 'app'"
             >
-              uni-app 客户端（5 屏 H5 演示）
+              uni-app 客户端（7 屏 H5 演示）
             </button>
             <button
               type="button"
@@ -103,8 +103,8 @@ function openGallery(list: EvidenceMedia[], startIndex: number, event: MouseEven
       <section v-if="activeView !== 'admin'" class="glass-panel app-stage" aria-label="uni-app 客户端核心页面截图">
         <div class="stage-head">
           <div>
-            <span class="eyebrow">UNI-APP CLIENT · 4 CORE FLOWS (5 SCREENS · H5 MOCK)</span>
-            <h3 class="stage-title">uni-app 移动端核心界面 · 登录、商城、详情、订单与社区</h3>
+            <span class="eyebrow">UNI-APP CLIENT · 7 CORE SCREENS · H5 MOCK</span>
+            <h3 class="stage-title">uni-app 移动端核心界面 · 首页、个人主页、登录、社区与电商订单</h3>
           </div>
           <span class="badge badge-amber">H5 Mock 演示 · 非线上真实数据</span>
         </div>
@@ -445,8 +445,8 @@ function openGallery(list: EvidenceMedia[], startIndex: number, event: MouseEven
 
 .phone-gallery {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .phone-card {
