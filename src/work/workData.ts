@@ -94,7 +94,7 @@ export const workIndexCards: WorkIndexCard[] = [
     number: '01',
     tier: '核心业务 · 快递履约双端',
     accent: 'cyan',
-    company: '南京递吾件融',
+    company: '递吾件融',
     period: '2023.08 — 2025.05',
     title: '中邮通快递体系 · 逍遥邮小程序与运营后台',
     valuePitch:
@@ -144,7 +144,7 @@ export const workIndexCards: WorkIndexCard[] = [
     number: '04',
     tier: '跨端电商 · App 与后台',
     accent: 'cyan',
-    company: '南京递吾件融',
+    company: '递吾件融',
     period: '2023.08 — 2025.05',
     title: 'LiveShop 海外社交电商 · uni-app 与后台',
     valuePitch:
@@ -162,7 +162,7 @@ export const courierCase = {
   id: 'courier' as const,
   number: '01',
   tier: '核心业务 · 快递履约双端体系',
-  company: '南京递吾件融网络科技有限公司',
+  company: '递吾件融网络科技有限公司',
   period: '2023.08 — 2025.05',
   title: '中邮通快递体系 · 逍遥邮小程序与运营管理后台',
   subtitle:
@@ -656,7 +656,7 @@ export const liveshopCase = {
   id: 'liveshop' as const,
   number: '04',
   tier: '跨端电商 · 海外社交电商 App 与运营后台',
-  company: '南京递吾件融网络科技有限公司',
+  company: '递吾件融网络科技有限公司',
   period: '2023.08 — 2025.05',
   title: 'LiveShop 海外社交电商 · uni-app 客户端与运营管理后台',
   subtitle:

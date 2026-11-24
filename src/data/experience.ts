@@ -28,7 +28,7 @@ export const experience: ExperienceItem[] = [
     ],
   },
   {
-    company: '南京递吾件融网络科技有限公司',
+    company: '递吾件融网络科技有限公司',
     role: '前端开发工程师',
     period: '2023.08 — 2025.05',
     department: '快递业务平台 · 低代码引擎 · 海外社交电商',

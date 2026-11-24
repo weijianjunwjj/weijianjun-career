@@ -40,7 +40,7 @@ export const profile = {
       focus: 'EBI 游戏数据平台 · 微前端构建与状态治理',
     },
     {
-      company: '南京递吾件融',
+      company: '递吾件融',
       period: '2023.08 — 2025.05',
       focus: '中邮通双端 · 低代码数据层 · 海外电商',
     },

@@ -39,7 +39,7 @@ test('unified career positioning, factual history, unified 4-case order and zero
     experience.map((e) => e.company),
     [
       '友谊时光科技股份有限公司',
-      '南京递吾件融网络科技有限公司',
+      '递吾件融网络科技有限公司',
       '文思海辉智科科技有限公司无锡分公司',
     ],
   )

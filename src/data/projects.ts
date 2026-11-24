@@ -121,7 +121,7 @@ export const gatewayProjects: GatewayProject[] = [
     id: 'courier',
     number: '01',
     tier: '核心业务',
-    company: '南京递吾件融网络科技有限公司',
+    company: '递吾件融网络科技有限公司',
     period: '2023.08 — 2025.05',
     title: '中邮通快递体系 · 逍遥邮小程序与运营后台',
     summary:
@@ -194,7 +194,7 @@ export const gatewayProjects: GatewayProject[] = [
     id: 'liveshop',
     number: '04',
     tier: '跨端电商',
-    company: '南京递吾件融网络科技有限公司',
+    company: '递吾件融网络科技有限公司',
     period: '2023.08 — 2025.05',
     title: 'LiveShop 海外社交电商 App 与运营管理后台',
     summary:
