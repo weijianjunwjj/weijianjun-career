@@ -6,6 +6,7 @@ export const links = {
   workCourier: workUrl('projects/courier/'),
   workCourierMini: workUrl('projects/courier/mini/'),
   workCourierAdmin: workUrl('projects/courier/admin/'),
+  workLowcode: workUrl('projects/lowcode/'),
   workAnalytics: workUrl('projects/analytics/'),
   workLiveshop: workUrl('projects/liveshop/'),
   github: 'https://github.com/weijianjunwjj',

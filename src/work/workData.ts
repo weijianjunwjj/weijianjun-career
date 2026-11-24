@@ -1,7 +1,7 @@
 import { publicAsset } from '../utils/publicAsset.ts'
 import type { LightboxChapter } from '../components/MediaLightbox.vue'
 
-export type WorkCaseId = 'all' | 'courier' | 'analytics' | 'liveshop'
+export type WorkCaseId = 'all' | 'courier' | 'lowcode' | 'analytics' | 'liveshop'
 export type CourierSubView = 'overview' | 'mini' | 'admin'
 
 export interface EvidenceMedia {
@@ -47,19 +47,19 @@ export interface AsyncScenario {
 
 export const workOverviewStats = [
   {
-    value: '3 大真实业务体系',
-    label: '中邮通（核心）/ 友谊时光 / LiveShop',
-    detail: '覆盖微信原生小程序、复杂中后台与微前端数据平台',
+    value: '4 大真实业务体系',
+    label: '中邮通 / 低代码引擎 / 友谊时光 / LiveShop',
+    detail: '覆盖微信小程序、低代码物料引擎、微前端数据平台与中后台',
   },
   {
-    value: '20 张实拍 + 2 段录屏',
-    label: '真机脱敏、H5 演示与历史后台证据',
-    detail: '含真机支付分录屏、LiveShop 7 屏 App 演示与 51 秒后台录屏',
+    value: '20 张实拍 + 2 段录屏 + 交互沙盒',
+    label: '真机脱敏、H5 演示与低代码实时演练',
+    detail: '含真机支付分录屏、LiveShop 7 屏 App 演示、51 秒后台录屏及低代码沙盒',
   },
   {
     value: '100% 边界可核验',
     label: '明确标注样本来源与个人职责',
-    detail: '严格区分真机历史记录、脱敏复现样本与本地 Mock 演示',
+    detail: '严格区分真机历史记录、脱敏独立复现与平台既有基座边界',
   },
 ]
 
@@ -383,9 +383,78 @@ export const courierCase = {
   ] satisfies DecisionCard[],
 }
 
+export const lowcodeCase = {
+  id: 'lowcode' as const,
+  number: '02',
+  tier: '平台工程 · 物料与数据层',
+  scopeLabel: '企业级低代码平台 · Vue 3 组件库包',
+  title: '企业级低代码平台 · 物料协议、图表数据层与渲染权限',
+  subtitle:
+    '以独立组件库包集成到宿主业务后台的 Vue 3 低代码引擎。平台设计器画布、Schema 协议与流程编排由团队既有建设；本人聚焦引擎内部的图表配置驱动数据层与多维透视、CRUD 异步导入导出闭环、渲染器审批节点字段级权限透传及多款配置物料扩展。',
+  stack: ['Vue 3', 'ECharts', 'Element Plus', 'Schema / 物料协议', '多维透视 Map', '异步任务轮询'],
+  highlights: [
+    {
+      value: '4 类图表统一数据层',
+      label: '抽离公共数据源处理器，柱状 / 漏斗 / 雷达 / 散点复用查询编译与适配（重构 +365 / −735 行）',
+    },
+    {
+      value: 'O(n) 二维 Map 透视',
+      label: '横轴 × 颜色维度自动聚合与缺失组合补零，动态生成堆叠柱状图系列并兜底异常回退',
+    },
+    {
+      value: 'CRUD 异步导入轮询',
+      label: '模板、表头映射、3 种判重策略与仅待处理任务 Promise.allSettled 并发轮询 + 自动停表',
+    },
+  ],
+  evidenceNote:
+    '说明：原低代码引擎及宿主管理后台属企业私有源码，不公开原仓库、接口地址与品牌标识。上方四层架构图与三组交互演练台均基于同等工程机制独立脱敏重写，使用本地模拟样本。',
+  decisions: [
+    {
+      index: '01',
+      title: '配置到查询的统一收口与 O(n) 多维透视',
+      problem:
+        '柱状、漏斗、雷达、散点四类图表各自拼装统计查询体与字段清理逻辑，新增日期/数值分桶或排序字段需同步改动四处。',
+      decision:
+        '抽离统一数据源处理器：按面板声明式配置清理空数组并判定分桶模式，由 adaptChartData 按图表类型转换；多维透视通过两层 Map 做 O(n) 累加并对缺失组合补 0，异常时回退原始数据。',
+      outcome:
+        '四类图表共用单一数据管道（净减 ~370 行重复代码）；同时明确单入口膨胀风险，为后续按图表策略注册拆分留出边界。',
+    },
+    {
+      index: '02',
+      title: 'CRUD 通用异步导入导出与轮询状态机',
+      problem:
+        '低代码列表物料面向任意动态数据表，批量导入涉及表头不齐、重复数据冲突与长耗时后台任务，易造成前端轮询失控或定时器泄漏。',
+      decision:
+        '从零完成模板选择、单文件校验、表头映射（header_mapping）与 3 种重复策略（覆盖/跳过/仅更新旧记录）；任务弹窗仅筛选待处理状态并用 Promise.allSettled 并发刷新，空任务自动停表、卸载清理定时器。',
+      outcome:
+        '形成无业务表耦合的通用导入导出闭环，单条任务查询失败不阻断列表更新；可进一步演进指数退避与请求去重。',
+    },
+    {
+      index: '03',
+      title: '渲染器层的审批流节点字段级权限合流',
+      problem:
+        '宿主流程引擎下发审批节点字段权限（taskForm）后，旧版渲染器把不可读且不可写的字段误展示为只读态，违背审批隐藏要求。',
+      decision:
+        '沿 GenerateForm → GenerateFormItem → GenerateElementItem 链路透传节点权限表，在渲染器元素层将“可读或可写”与表单原显隐条件做逻辑与运算。',
+      outcome:
+        '确保节点隐藏与原表单联动规则不冲突；以小范围 props 透传控制风险，并评估深层嵌套场景可演进为 provide/inject。',
+    },
+    {
+      index: '04',
+      title: '物料三件套解耦与设计态请求隔离',
+      problem:
+        '低代码设计器若直接耦合业务组件实现会导致画布膨胀，且远程数据源物料在拖拽进入画布时容易发出无效脏请求。',
+      decision:
+        '遵循引擎自动注册的 config / panel / runtime 三件套协议交付主题选择器、边距、圆角、密码框等物料；为树形等远程组件增加环境判定，仅在预览/运行态发起请求。',
+      outcome:
+        '保证设计态画布纯净流畅，新物料按规范目录即可自动注册接入，降低平台扩展成本。',
+    },
+  ] satisfies DecisionCard[],
+}
+
 export const analyticsCase = {
   id: 'analytics' as const,
-  number: '02',
+  number: '03',
   tier: '真实企业案例 · 微前端数据平台与渐进治理',
   company: '友谊时光科技股份有限公司',
   period: '2025.08 — 2026.05',
@@ -466,7 +535,7 @@ export const analyticsCase = {
 
 export const liveshopCase = {
   id: 'liveshop' as const,
-  number: '03',
+  number: '04',
   tier: '双端电商案例 · 海外社交电商 App 与运营后台',
   company: '南京递吾件融网络科技有限公司',
   period: '2023.08 — 2025.05',
