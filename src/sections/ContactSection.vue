@@ -32,7 +32,7 @@ async function copyText(key: 'email' | 'phone', value: string) {
           </span>
           <h2 class="contact-title">{{ profile.statement }}</h2>
           <p class="contact-desc">
-            如果你正在寻找一位既能啃下复杂中后台/小程序/微前端老系统治理、又能把 AI 应用与 Agent 工作流真正落地的资深前端工程师，欢迎直接联系或查看完整工程项目体验中心。
+            如果你正在寻找一位既能啃下复杂中后台/小程序/微前端老系统治理、又能用 AI 工程化为团队提效的高级前端工程师，欢迎直接联系或进入工程项目体验中心查验。
           </p>
 
           <div class="contact-actions">
@@ -62,7 +62,7 @@ async function copyText(key: 'email' | 'phone', value: string) {
             </div>
             <button
               type="button"
-              class="btn btn-ghost btn-sm"
+              class="btn btn-ghost btn-sm channel-copy-btn"
               @click="copyText('email', profile.email)"
             >
               <AppIcon :name="copiedKey === 'email' ? 'check' : 'copy'" :size="14" />
@@ -77,7 +77,7 @@ async function copyText(key: 'email' | 'phone', value: string) {
             </div>
             <button
               type="button"
-              class="btn btn-ghost btn-sm"
+              class="btn btn-ghost btn-sm channel-copy-btn"
               @click="copyText('phone', profile.phone)"
             >
               <AppIcon :name="copiedKey === 'phone' ? 'check' : 'copy'" :size="14" />
@@ -92,14 +92,14 @@ async function copyText(key: 'email' | 'phone', value: string) {
 
 <style scoped>
 .contact-section {
-  padding-bottom: clamp(48px, 6vw, 80px);
+  padding-bottom: clamp(44px, 5vw, 72px);
 }
 
 .contact-panel {
-  padding: clamp(24px, 3.4vw, 40px);
+  padding: clamp(22px, 3.2vw, 36px);
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
-  gap: clamp(22px, 3vw, 40px);
+  gap: clamp(20px, 3vw, 36px);
   align-items: center;
   border-color: rgba(56, 232, 255, 0.24);
   background:
@@ -109,19 +109,19 @@ async function copyText(key: 'email' | 'phone', value: string) {
 
 .contact-copy {
   display: grid;
-  gap: 14px;
+  gap: 13px;
 }
 
 .contact-title {
   margin: 0;
-  font-size: clamp(22px, 2.8vw, 32px);
-  line-height: 1.22;
+  font-size: clamp(21px, 2.6vw, 30px);
+  line-height: 1.24;
   color: var(--ink-primary);
 }
 
 .contact-desc {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--ink-secondary);
 }
 
@@ -129,7 +129,7 @@ async function copyText(key: 'email' | 'phone', value: string) {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .resume-file-hint {
@@ -144,12 +144,11 @@ async function copyText(key: 'email' | 'phone', value: string) {
 }
 
 .channel-card {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  padding: 16px 18px;
+  padding: 15px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-subtle);
   background: rgba(6, 11, 24, 0.78);
@@ -158,6 +157,7 @@ async function copyText(key: 'email' | 'phone', value: string) {
 .channel-info {
   display: grid;
   gap: 3px;
+  min-width: 0;
 }
 
 .channel-label {
@@ -167,14 +167,33 @@ async function copyText(key: 'email' | 'phone', value: string) {
 }
 
 .channel-value {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--ink-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-copy-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 @media (max-width: 960px) {
   .contact-panel {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .channel-card {
+    padding: 13px 14px;
+    gap: 10px;
+  }
+
+  .channel-value {
+    font-size: 13.5px;
   }
 }
 </style>

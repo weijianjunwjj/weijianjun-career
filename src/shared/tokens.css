@@ -166,7 +166,11 @@ a {
 
 .section-block {
   position: relative;
-  padding-block: clamp(56px, 7vw, 96px);
+  padding-block: clamp(44px, 5.5vw, 76px);
+}
+
+[id] {
+  scroll-margin-top: 86px;
 }
 
 .section-block + .section-block::before {
@@ -560,9 +564,12 @@ a {
   }
 
   p,
-  li,
-  .mono {
+  li {
     overflow-wrap: anywhere;
+  }
+
+  .mono {
+    overflow-wrap: break-word;
   }
 }
 

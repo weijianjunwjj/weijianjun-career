@@ -2,6 +2,9 @@
 import { computed, ref } from 'vue'
 import AppIcon from '../../components/AppIcon.vue'
 import type { LightboxItem } from '../../components/MediaLightbox.vue'
+import { links } from '../../data/links.ts'
+import CaseValueStrip from './CaseValueStrip.vue'
+import DecisionAccordion from './DecisionAccordion.vue'
 import { analyticsCase } from '../workData.ts'
 
 const emit = defineEmits<{
@@ -36,14 +39,16 @@ function openGallery(startIndex: number, event: MouseEvent) {
           <span class="mono case-period">{{ analyticsCase.company }} · {{ analyticsCase.period }}</span>
         </div>
 
-        <h2 class="case-title">{{ analyticsCase.title }}</h2>
+        <h1 class="case-title">{{ analyticsCase.title }}</h1>
         <p class="case-subtitle">{{ analyticsCase.subtitle }}</p>
+
+        <CaseValueStrip :trio="analyticsCase.valueTrio" accent="violet" />
 
         <div class="tag-row">
           <span v-for="tech in analyticsCase.stack" :key="tech" class="tech-chip">{{ tech }}</span>
         </div>
 
-        <!-- Build Governance Highlight Strip -->
+        <!-- Build Governance & OSS Highlight Strip -->
         <div class="governance-strip">
           <div class="gov-stat">
             <span class="mono gov-val">300s → 30s</span>
@@ -55,17 +60,20 @@ function openGallery(startIndex: number, event: MouseEvent) {
           </div>
           <div class="gov-stat">
             <span class="mono gov-val">3 开源包沉淀</span>
-            <span class="gov-label">vue-page-store / vue-page-scope / vue-page-runtime（npm 已发布）</span>
+            <span class="gov-label">
+              vue-page-store / vue-page-scope / vue-page-runtime ·
+              <a :href="`${links.main}#credentials`" class="gov-link">查看开源主页 ↗</a>
+            </span>
           </div>
         </div>
       </header>
 
       <!-- 3-Screen Interactive Desensitized Replay Stage -->
-      <div class="glass-panel replay-workbench">
+      <div id="analytics-replay" class="glass-panel replay-workbench">
         <div class="replay-top">
           <div>
             <span class="eyebrow">DESENSITIZED FUNCTIONAL REPLAY · 3 CORE VIEWS</span>
-            <h3 class="replay-title">核心业务现场复现 · 实时监控 / 7 模块状态边界 / CRM 规则校验</h3>
+            <h2 class="replay-title">核心业务现场复现 · 实时监控 / 7 模块状态边界 / CRM 规则校验</h2>
           </div>
           <div class="replay-tabs" role="tablist" aria-label="切换友谊时光 EBI 复现视图">
             <button
@@ -95,7 +103,7 @@ function openGallery(startIndex: number, event: MouseEvent) {
               :aria-label="`放大查看 ${activeShot.title}`"
               @click="openGallery(activeIdx, $event)"
             >
-              <img :src="activeShot.src" :alt="activeShot.alt" loading="lazy" width="1320" height="880" />
+              <img :src="activeShot.src" :alt="activeShot.alt" width="1320" height="880" />
               <span class="optical-zoom-hint">
                 <AppIcon name="expand" :size="12" />
                 <span>高清放大查验</span>
@@ -106,7 +114,7 @@ function openGallery(startIndex: number, event: MouseEvent) {
           <aside class="replay-sidebar">
             <div class="active-shot-info">
               <span class="badge badge-violet">{{ activeShot.provenance }}</span>
-              <h4 class="shot-heading">{{ activeShot.title }}</h4>
+              <h3 class="shot-heading">{{ activeShot.title }}</h3>
               <p class="shot-desc">{{ activeShot.caption }}</p>
             </div>
 
@@ -119,7 +127,7 @@ function openGallery(startIndex: number, event: MouseEvent) {
                 :class="{ 'is-active': activeIdx === idx }"
                 @click="activeIdx = idx"
               >
-                <img :src="shot.src" :alt="shot.title" loading="lazy" width="320" height="213" />
+                <img :src="shot.src" :alt="shot.title" width="88" height="56" />
                 <span class="thumb-meta">
                   <span class="mono thumb-tag">{{ shot.tag }}</span>
                   <span class="thumb-title">{{ shot.title }}</span>
@@ -132,38 +140,32 @@ function openGallery(startIndex: number, event: MouseEvent) {
         </div>
       </div>
 
-      <!-- 4 Technical Decisions -->
-      <div class="decisions-grid">
-        <article
-          v-for="item in analyticsCase.decisions"
-          :key="item.index"
-          class="glass-panel decision-card"
-        >
-          <span class="mono decision-index">DECISION {{ item.index }}</span>
-          <h3 class="decision-title">{{ item.title }}</h3>
-          <p class="decision-row"><strong>痛点：</strong>{{ item.problem }}</p>
-          <p class="decision-row"><strong>决策：</strong>{{ item.decision }}</p>
-          <p class="decision-outcome"><strong>结果：</strong>{{ item.outcome }}</p>
-        </article>
-      </div>
+      <!-- 4 Technical Decisions (Progressive Disclosure: 2 open by default) -->
+      <DecisionAccordion
+        :decisions="analyticsCase.decisions"
+        :default-open-count="2"
+        accent="violet"
+        section-id="analytics-decisions"
+      />
     </div>
   </section>
 </template>
 
 <style scoped>
 .case-section {
-  padding-block: clamp(28px, 4vw, 52px);
+  padding-top: 16px;
+  padding-bottom: clamp(24px, 3.2vw, 40px);
 }
 
 .case-stack {
   display: grid;
-  gap: 20px;
+  gap: 18px;
 }
 
 .case-header {
-  padding: clamp(22px, 3vw, 32px);
+  padding: clamp(20px, 2.8vw, 30px);
   display: grid;
-  gap: 16px;
+  gap: 15px;
   border-color: rgba(139, 92, 246, 0.34);
   background:
     radial-gradient(50% 80% at 100% 0%, rgba(139, 92, 246, 0.12), transparent 65%),
@@ -191,7 +193,7 @@ function openGallery(startIndex: number, event: MouseEvent) {
 
 .case-subtitle {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--ink-secondary);
   max-width: 78ch;
 }
@@ -200,11 +202,11 @@ function openGallery(startIndex: number, event: MouseEvent) {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  padding-top: 6px;
+  padding-top: 2px;
 }
 
 .gov-stat {
-  padding: 14px 16px;
+  padding: 13px 15px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(139, 92, 246, 0.25);
   background: rgba(6, 11, 24, 0.78);
@@ -213,19 +215,25 @@ function openGallery(startIndex: number, event: MouseEvent) {
 }
 
 .gov-val {
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 700;
   color: #c4b5fd;
 }
 
 .gov-label {
-  font-size: 12.5px;
+  font-size: 12.2px;
   color: var(--ink-secondary);
+}
+
+.gov-link {
+  color: var(--cyan);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 /* Replay Workbench */
 .replay-workbench {
-  padding: clamp(20px, 2.6vw, 30px);
+  padding: clamp(18px, 2.4vw, 28px);
   display: grid;
   gap: 18px;
 }
@@ -240,7 +248,7 @@ function openGallery(startIndex: number, event: MouseEvent) {
 
 .replay-title {
   margin: 4px 0 0;
-  font-size: clamp(18px, 2.1vw, 22px);
+  font-size: clamp(17.5px, 2vw, 21px);
   color: var(--ink-primary);
 }
 
@@ -328,9 +336,11 @@ function openGallery(startIndex: number, event: MouseEvent) {
 
 .thumb-item img {
   width: 88px;
-  aspect-ratio: 16 / 10;
+  height: 56px;
   object-fit: cover;
+  object-position: top left;
   border-radius: 5px;
+  background: #0b1326;
 }
 
 .thumb-meta {
@@ -356,62 +366,9 @@ function openGallery(startIndex: number, event: MouseEvent) {
   line-height: 1.5;
 }
 
-.decisions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.decision-card {
-  padding: 20px 22px;
-  display: grid;
-  gap: 9px;
-  align-content: start;
-}
-
-.decision-index {
-  font-size: 11px;
-  color: #c4b5fd;
-  letter-spacing: 0.08em;
-}
-
-.decision-title {
-  margin: 0;
-  font-size: 16px;
-  color: var(--ink-primary);
-}
-
-.decision-row {
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--ink-secondary);
-}
-
-.decision-row strong {
-  color: var(--ink-primary);
-}
-
-.decision-outcome {
-  margin: 2px 0 0;
-  padding-top: 8px;
-  border-top: 1px solid var(--line-subtle);
-  font-size: 13.5px;
-  color: #a6f4ff;
-}
-
-.decision-outcome strong {
-  color: var(--emerald);
-}
-
 @media (max-width: 1024px) {
   .replay-main,
   .governance-strip {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 760px) {
-  .decisions-grid {
     grid-template-columns: 1fr;
   }
 }

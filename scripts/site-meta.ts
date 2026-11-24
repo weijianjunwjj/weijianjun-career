@@ -34,7 +34,7 @@ export function socialTags(env: Record<string, string | undefined>) {
       tag: 'meta',
       attrs: {
         property: 'og:image:alt',
-        content: '魏建军 · 高级前端工程师｜AI 应用工程化',
+        content: profile.meta.title,
       },
     },
     { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },

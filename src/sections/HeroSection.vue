@@ -88,14 +88,14 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
         </div>
       </div>
 
-      <!-- Right Interactive Real Evidence Stage (Replaces empty decorative graphics) -->
-      <div class="hero-stage glass-panel" aria-label="真实工程项目实时预览台">
+      <!-- Right Interactive Real Evidence Stage (4 balanced tabs) -->
+      <div class="hero-stage glass-panel" aria-label="四大企业工程项目快速预览台">
         <div class="stage-top">
           <div class="stage-heading">
-            <span class="eyebrow">REAL EVIDENCE DECK</span>
+            <span class="eyebrow">REAL EVIDENCE DECK · 4 ENTERPRISE CASES</span>
             <span class="stage-provenance">{{ activeItem.provenance }}</span>
           </div>
-          <div class="stage-tabs" role="tablist" aria-label="切换真实工程项目预览">
+          <div class="stage-tabs" role="tablist" aria-label="切换四个真实业务项目预览">
             <button
               v-for="item in heroStageItems"
               :key="item.id"
@@ -174,34 +174,50 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
             <p class="stage-item-title">{{ activeItem.title }}</p>
             <p class="stage-item-highlight">{{ activeItem.highlight }}</p>
           </div>
-          <a
-            :href="activeItem.actionHref"
-            class="btn btn-portal btn-sm stage-action"
-          >
+          <a :href="activeItem.actionHref" class="btn btn-portal btn-sm stage-action">
             <span>{{ activeItem.actionLabel }}</span>
-            <AppIcon :name="activeItem.isExternal ? 'arrow-up-right' : 'arrow-right'" :size="14" />
+            <AppIcon name="arrow-up-right" :size="14" />
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Recruiter 3-Pillar Thesis Strip -->
-    <div class="container pillars-strip">
-      <article v-for="pillar in profile.valuePillars" :key="pillar.index" class="pillar-card">
-        <span class="mono pillar-index">{{ pillar.index }}</span>
-        <div class="pillar-body">
-          <h2 class="pillar-title">{{ pillar.title }}</h2>
-          <p class="pillar-text">{{ pillar.text }}</p>
+    <!-- Compact 15s Recruiter Career Snapshot Bar -->
+    <div class="container">
+      <div class="career-ribbon" aria-label="7 年职业履历速览">
+        <div class="career-ribbon-label">
+          <span class="eyebrow">
+            <span class="eyebrow-dot" />
+            <span>7 年履历速览</span>
+          </span>
         </div>
-      </article>
+        <div class="career-ribbon-items">
+          <a
+            v-for="item in profile.careerSnapshot"
+            :key="item.company"
+            href="#credentials"
+            class="career-chip"
+          >
+            <span class="career-chip-top">
+              <strong>{{ item.company }}</strong>
+              <span class="mono career-chip-period">{{ item.period }}</span>
+            </span>
+            <span class="career-chip-focus">{{ item.focus }}</span>
+          </a>
+        </div>
+        <a href="#credentials" class="btn btn-link btn-sm career-ribbon-more">
+          <span>完整履历与开源</span>
+          <AppIcon name="arrow-right" :size="14" />
+        </a>
+      </div>
     </div>
   </section>
 </template>
 
 <style scoped>
 .hero-section {
-  padding-top: clamp(32px, 4.5vw, 60px);
-  padding-bottom: clamp(44px, 5vw, 72px);
+  padding-top: clamp(32px, 4.5vw, 56px);
+  padding-bottom: clamp(32px, 4vw, 52px);
 }
 
 .hero-grid {
@@ -213,7 +229,7 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
 
 .hero-copy {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .hero-eyebrow-row {
@@ -231,19 +247,22 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
 .hero-title {
   margin: 0;
   display: grid;
-  gap: 4px;
-  font-size: clamp(34px, 4.4vw, 56px);
-  line-height: 1.1;
+  gap: 6px;
   letter-spacing: -0.03em;
   font-weight: 800;
 }
 
 .hero-title-line {
+  font-size: clamp(34px, 4.2vw, 54px);
+  line-height: 1.1;
   color: var(--ink-primary);
 }
 
 .hero-title-accent {
-  background: linear-gradient(96deg, #e8f8ff 0%, #5ceeff 42%, #8b9dff 100%);
+  font-size: clamp(24px, 2.8vw, 36px);
+  line-height: 1.18;
+  font-weight: 700;
+  background: linear-gradient(96deg, #cceeff 0%, #5ceeff 50%, #92a6ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -251,17 +270,17 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
 
 .hero-intro {
   margin: 0;
-  font-size: clamp(16px, 1.5vw, 18px);
+  font-size: clamp(15.5px, 1.45vw, 17.5px);
   font-weight: 500;
   color: #dce8ff;
-  line-height: 1.5;
+  line-height: 1.52;
 }
 
 .hero-desc {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--ink-secondary);
-  max-width: 56ch;
+  max-width: 54ch;
 }
 
 .hero-cta-row {
@@ -269,7 +288,7 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .hero-primary-cta {
@@ -281,11 +300,11 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .fact-tile {
-  padding: 14px;
+  padding: 13px 14px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-subtle);
   background: rgba(9, 16, 33, 0.72);
@@ -296,10 +315,11 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
 
 .fact-value {
   margin: 0;
-  font-size: 17px;
+  font-size: 16.5px;
   font-weight: 700;
   color: var(--cyan);
   letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .fact-label {
@@ -382,7 +402,7 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
 }
 
 .stage-viewport {
-  min-height: 310px;
+  min-height: 300px;
   display: grid;
   align-items: center;
 }
@@ -395,7 +415,6 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
   align-items: end;
 }
 
-.dual-desktop :deep(img),
 .dual-desktop img {
   aspect-ratio: 16 / 10;
   object-fit: cover;
@@ -413,7 +432,7 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
 }
 
 .single-showcase img {
-  max-height: 332px;
+  max-height: 320px;
   width: 100%;
   object-fit: cover;
   object-position: top center;
@@ -454,47 +473,70 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
   flex-shrink: 0;
 }
 
-/* Pillars strip */
-.pillars-strip {
-  margin-top: clamp(28px, 4vw, 48px);
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.pillar-card {
-  display: flex;
-  gap: 14px;
-  padding: 18px 20px;
+/* Compact Career Snapshot Ribbon */
+.career-ribbon {
+  margin-top: clamp(24px, 3.2vw, 36px);
+  padding: 12px 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-subtle);
-  background: rgba(8, 14, 29, 0.72);
-}
-
-.pillar-index {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--cyan);
-  padding-top: 2px;
-}
-
-.pillar-body {
+  background: rgba(7, 13, 27, 0.72);
   display: grid;
-  gap: 5px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 18px;
 }
 
-.pillar-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
+.career-ribbon-label {
+  flex-shrink: 0;
+}
+
+.career-ribbon-items {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.career-chip {
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 179, 255, 0.1);
+  background: rgba(11, 19, 38, 0.56);
+  display: grid;
+  gap: 3px;
+  transition: border-color 0.2s var(--ease-out), background-color 0.2s var(--ease-out);
+}
+
+.career-chip:hover {
+  border-color: rgba(56, 232, 255, 0.34);
+  background: rgba(16, 27, 51, 0.78);
+}
+
+.career-chip-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
   color: var(--ink-primary);
 }
 
-.pillar-text {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.55;
-  color: var(--ink-secondary);
+.career-chip-period {
+  font-size: 11px;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+
+.career-chip-focus {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.career-ribbon-more {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 @media (max-width: 1080px) {
@@ -502,7 +544,12 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
     grid-template-columns: 1fr;
   }
 
-  .pillars-strip {
+  .career-ribbon {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .career-ribbon-items {
     grid-template-columns: 1fr;
   }
 }

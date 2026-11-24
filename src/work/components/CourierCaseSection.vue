@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import AppIcon from '../../components/AppIcon.vue'
 import type { LightboxItem } from '../../components/MediaLightbox.vue'
 import AsyncOrderSimulator from './AsyncOrderSimulator.vue'
+import CaseValueStrip from './CaseValueStrip.vue'
+import DecisionAccordion from './DecisionAccordion.vue'
 import { courierCase, type CourierSubView, type EvidenceMedia, type VideoEvidence } from '../workData.ts'
 
 defineProps<{
@@ -82,7 +84,7 @@ function openQr(event: MouseEvent) {
 <template>
   <section id="case-courier" class="case-section">
     <div class="container case-stack">
-      <!-- Case Header -->
+      <!-- Case Header: First-Screen Value Trio -->
       <header class="case-header glass-panel">
         <div class="case-header-top">
           <div class="case-badges">
@@ -108,7 +110,7 @@ function openQr(event: MouseEvent) {
               :class="{ 'is-active': subView === 'mini' }"
               @click="emit('changeSubView', 'mini')"
             >
-              微信小程序（5 图 + 录屏 + 码）
+              微信小程序（5 图 + 录屏）
             </button>
             <button
               type="button"
@@ -123,8 +125,10 @@ function openQr(event: MouseEvent) {
           </div>
         </div>
 
-        <h2 class="case-title">{{ courierCase.title }}</h2>
+        <h1 class="case-title">{{ courierCase.title }}</h1>
         <p class="case-subtitle">{{ courierCase.subtitle }}</p>
+
+        <CaseValueStrip :trio="courierCase.valueTrio" accent="cyan" />
 
         <div class="tag-row">
           <span v-for="tech in courierCase.stack" :key="tech" class="tech-chip">{{ tech }}</span>
@@ -137,32 +141,23 @@ function openQr(event: MouseEvent) {
               <span class="mono lifecycle-step">{{ node.step }}</span>
               <span class="badge">{{ node.side }}</span>
             </div>
-            <h3 class="lifecycle-title">{{ node.title }}</h3>
+            <h2 class="lifecycle-title">{{ node.title }}</h2>
             <p class="lifecycle-detail">{{ node.detail }}</p>
           </article>
         </div>
       </header>
 
       <!-- Mini-Program Evidence Block -->
-      <div v-if="subView !== 'admin'" class="evidence-panel glass-panel">
+      <div v-if="subView !== 'admin'" id="courier-evidence" class="evidence-panel glass-panel">
         <div class="panel-header">
           <div>
             <span class="eyebrow">WECHAT MINI-PROGRAM · REAL DEVICE EVIDENCE</span>
-            <h3 class="panel-title">逍遥邮微信小程序 · 扫码寄件、支付分先寄后付到扣款闭环</h3>
+            <h2 class="panel-title">逍遥邮微信小程序 · 扫码寄件、支付分先寄后付到扣款闭环</h2>
           </div>
-          <div class="panel-actions">
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openVideo(courierCase.miniVideo, $event)"
-            >
-              <AppIcon name="play" :size="14" />
-              <span>播放真机脱敏录屏</span>
-            </button>
-          </div>
+          <span class="badge badge-emerald">{{ courierCase.miniVideo.provenance }}</span>
         </div>
 
-        <!-- Video + QR Dual Hero Card -->
+        <!-- Video + QR Dual Hero Card (deduplicated single primary video trigger) -->
         <div class="mini-spotlight">
           <div class="video-trigger-card">
             <div class="video-thumb">
@@ -177,29 +172,30 @@ function openQr(event: MouseEvent) {
                 @click="openVideo(courierCase.miniVideo, $event)"
               >
                 <AppIcon name="play" :size="20" />
-                <span>观看真机录屏</span>
+                <span>播放录屏</span>
               </button>
             </div>
             <div class="video-info">
-              <span class="badge badge-emerald">{{ courierCase.miniVideo.provenance }}</span>
-              <h4 class="video-title">{{ courierCase.miniVideo.title }}</h4>
+              <h3 class="video-title">{{ courierCase.miniVideo.title }}</h3>
               <p class="video-desc">{{ courierCase.miniVideo.description }}</p>
               <div class="chapter-pills">
-                <span
+                <button
                   v-for="ch in courierCase.miniVideo.chapters"
                   :key="ch.label"
+                  type="button"
                   class="mono chapter-pill"
+                  @click="openVideo(courierCase.miniVideo, $event)"
                 >
                   {{ ch.timeText }} {{ ch.label }}
-                </span>
+                </button>
               </div>
               <button
                 type="button"
-                class="btn btn-portal btn-sm"
+                class="btn btn-primary btn-sm"
                 @click="openVideo(courierCase.miniVideo, $event)"
               >
                 <AppIcon name="play" :size="14" />
-                <span>打开分章播放器</span>
+                <span>打开分章真机录屏</span>
               </button>
             </div>
           </div>
@@ -247,47 +243,38 @@ function openQr(event: MouseEvent) {
             </div>
             <div class="shot-copy">
               <span class="mono shot-tag">{{ shot.tag }}</span>
-              <h4 class="shot-title">{{ shot.title }}</h4>
+              <h3 class="shot-title">{{ shot.title }}</h3>
               <p class="shot-caption">{{ shot.caption }}</p>
             </div>
           </article>
         </div>
       </div>
 
-      <!-- Admin Console Evidence Block -->
-      <div v-if="subView !== 'mini'" class="evidence-panel glass-panel">
+      <!-- Admin Console Evidence Block (deduplicated single video button) -->
+      <div
+        v-if="subView !== 'mini'"
+        :id="subView === 'admin' ? 'courier-evidence' : 'courier-admin-evidence'"
+        class="evidence-panel glass-panel"
+      >
         <div class="panel-header">
           <div>
             <span class="eyebrow">VUE 3 + NAIVE UI ADMIN · HISTORICAL BACKEND MOCK RUN</span>
-            <h3 class="panel-title">逍遥邮运营管理后台 · 订单检索、出账统计、双账单比对与权限</h3>
-          </div>
-          <div class="panel-actions">
-            <button
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openVideo(courierCase.adminVideo, $event)"
-            >
-              <AppIcon name="play" :size="14" />
-              <span>播放 51 秒后台实录</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="admin-video-banner">
-          <div class="admin-video-info">
-            <span class="badge badge-amber">{{ courierCase.adminVideo.provenance }}</span>
-            <h4 class="video-title">{{ courierCase.adminVideo.title }}</h4>
-            <p class="video-desc">{{ courierCase.adminVideo.description }}</p>
+            <h2 class="panel-title">逍遥邮运营管理后台 · 订单检索、出账统计、双账单比对与权限</h2>
           </div>
           <button
             type="button"
-            class="btn btn-portal btn-sm"
+            class="btn btn-primary btn-sm"
             @click="openVideo(courierCase.adminVideo, $event)"
           >
             <AppIcon name="play" :size="14" />
-            <span>分章播放 ({{ courierCase.adminVideo.duration }})</span>
+            <span>分章播放 51 秒后台实录</span>
           </button>
         </div>
+
+        <p class="admin-video-note">
+          <span class="badge badge-amber">{{ courierCase.adminVideo.provenance }}</span>
+          <span>{{ courierCase.adminVideo.description }}</span>
+        </p>
 
         <div class="admin-grid">
           <article
@@ -314,7 +301,7 @@ function openQr(event: MouseEvent) {
               </button>
             </div>
             <div class="shot-copy">
-              <h4 class="shot-title">{{ shot.title }}</h4>
+              <h3 class="shot-title">{{ shot.title }}</h3>
               <p class="shot-caption">{{ shot.caption }}</p>
             </div>
           </article>
@@ -322,40 +309,36 @@ function openQr(event: MouseEvent) {
       </div>
 
       <!-- Interactive Async Order State Machine -->
-      <AsyncOrderSimulator />
-
-      <!-- 4 Key Technical Decisions -->
-      <div class="decisions-grid">
-        <article
-          v-for="item in courierCase.decisions"
-          :key="item.index"
-          class="glass-panel decision-card"
-        >
-          <span class="mono decision-index">DECISION {{ item.index }}</span>
-          <h3 class="decision-title">{{ item.title }}</h3>
-          <p class="decision-row"><strong>痛点：</strong>{{ item.problem }}</p>
-          <p class="decision-row"><strong>决策：</strong>{{ item.decision }}</p>
-          <p class="decision-outcome"><strong>结果：</strong>{{ item.outcome }}</p>
-        </article>
+      <div id="courier-simulator">
+        <AsyncOrderSimulator />
       </div>
+
+      <!-- 4 Key Technical Decisions (Progressive Disclosure: 2 open by default) -->
+      <DecisionAccordion
+        :decisions="courierCase.decisions"
+        :default-open-count="2"
+        accent="cyan"
+        section-id="courier-decisions"
+      />
     </div>
   </section>
 </template>
 
 <style scoped>
 .case-section {
-  padding-block: clamp(28px, 4vw, 52px);
+  padding-top: 16px;
+  padding-bottom: clamp(24px, 3.2vw, 40px);
 }
 
 .case-stack {
   display: grid;
-  gap: 20px;
+  gap: 18px;
 }
 
 .case-header {
-  padding: clamp(22px, 3vw, 32px);
+  padding: clamp(20px, 2.8vw, 30px);
   display: grid;
-  gap: 16px;
+  gap: 15px;
   border-color: rgba(56, 232, 255, 0.26);
 }
 
@@ -416,7 +399,7 @@ function openQr(event: MouseEvent) {
 
 .case-subtitle {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--ink-secondary);
   max-width: 78ch;
 }
@@ -425,16 +408,16 @@ function openQr(event: MouseEvent) {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  padding-top: 6px;
+  padding-top: 2px;
 }
 
 .lifecycle-node {
-  padding: 14px;
+  padding: 13px 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-subtle);
   background: rgba(5, 10, 22, 0.78);
   display: grid;
-  gap: 6px;
+  gap: 5px;
   align-content: start;
 }
 
@@ -449,25 +432,26 @@ function openQr(event: MouseEvent) {
   font-size: 12px;
   font-weight: 700;
   color: var(--cyan);
+  white-space: nowrap;
 }
 
 .lifecycle-title {
   margin: 0;
-  font-size: 14px;
+  font-size: 13.8px;
   color: var(--ink-primary);
 }
 
 .lifecycle-detail {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12.2px;
   color: var(--ink-secondary);
 }
 
 /* Evidence Panels */
 .evidence-panel {
-  padding: clamp(20px, 2.6vw, 30px);
+  padding: clamp(18px, 2.4vw, 28px);
   display: grid;
-  gap: 20px;
+  gap: 18px;
 }
 
 .panel-header {
@@ -480,7 +464,7 @@ function openQr(event: MouseEvent) {
 
 .panel-title {
   margin: 4px 0 0;
-  font-size: clamp(18px, 2.1vw, 22px);
+  font-size: clamp(17.5px, 2vw, 21px);
   color: var(--ink-primary);
 }
 
@@ -492,9 +476,9 @@ function openQr(event: MouseEvent) {
 
 .video-trigger-card {
   display: grid;
-  grid-template-columns: 136px minmax(0, 1fr);
-  gap: 18px;
-  padding: 18px;
+  grid-template-columns: 126px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
   border-radius: var(--radius-md);
   border: 1px solid rgba(56, 232, 255, 0.22);
   background: rgba(5, 10, 22, 0.82);
@@ -503,8 +487,8 @@ function openQr(event: MouseEvent) {
 
 .video-thumb {
   position: relative;
-  width: 136px;
-  height: 238px;
+  width: 126px;
+  height: 220px;
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(148, 179, 255, 0.24);
@@ -536,18 +520,18 @@ function openQr(event: MouseEvent) {
 }
 
 .play-overlay-btn:hover {
-  background: rgba(4, 7, 17, 0.38);
+  background: rgba(4, 7, 17, 0.36);
 }
 
 .video-info {
   display: grid;
-  gap: 10px;
+  gap: 9px;
   justify-items: start;
 }
 
 .video-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 15.5px;
   color: var(--ink-primary);
 }
 
@@ -564,19 +548,25 @@ function openQr(event: MouseEvent) {
 }
 
 .chapter-pill {
-  padding: 3px 8px;
+  padding: 4px 9px;
   border-radius: 5px;
   border: 1px solid var(--line-subtle);
   background: rgba(11, 19, 38, 0.8);
   font-size: 11.5px;
   color: #a6f4ff;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease-out);
+}
+
+.chapter-pill:hover {
+  border-color: var(--cyan);
 }
 
 .qr-card {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 18px;
+  padding: 16px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-subtle);
   background: rgba(5, 10, 22, 0.82);
@@ -584,7 +574,7 @@ function openQr(event: MouseEvent) {
 
 .qr-img-btn {
   flex-shrink: 0;
-  width: 148px;
+  width: 138px;
   padding: 10px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(56, 232, 255, 0.34);
@@ -631,31 +621,26 @@ function openQr(event: MouseEvent) {
   display: grid;
   gap: 10px;
   align-content: start;
+  min-width: 0;
 }
 
 .phone-shot-card img {
+  width: 100%;
+  height: auto;
   aspect-ratio: 9 / 19;
   object-fit: cover;
   object-position: top;
 }
 
 /* Admin Evidence */
-.admin-video-banner {
+.admin-video-note {
+  margin: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 16px 18px;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(56, 232, 255, 0.22);
-  background: rgba(5, 10, 22, 0.82);
-}
-
-.admin-video-info {
-  display: grid;
-  gap: 5px;
-  max-width: 72ch;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-secondary);
 }
 
 .admin-grid {
@@ -679,6 +664,7 @@ function openQr(event: MouseEvent) {
 .shot-copy {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .shot-tag {
@@ -695,56 +681,9 @@ function openQr(event: MouseEvent) {
 
 .shot-caption {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12.2px;
   color: var(--ink-secondary);
-}
-
-/* Decisions */
-.decisions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.decision-card {
-  padding: 20px 22px;
-  display: grid;
-  gap: 9px;
-  align-content: start;
-}
-
-.decision-index {
-  font-size: 11px;
-  color: var(--cyan);
-  letter-spacing: 0.08em;
-}
-
-.decision-title {
-  margin: 0;
-  font-size: 16px;
-  color: var(--ink-primary);
-}
-
-.decision-row {
-  margin: 0;
-  font-size: 13.5px;
-  color: var(--ink-secondary);
-}
-
-.decision-row strong {
-  color: var(--ink-primary);
-}
-
-.decision-outcome {
-  margin: 2px 0 0;
-  padding-top: 8px;
-  border-top: 1px solid var(--line-subtle);
-  font-size: 13.5px;
-  color: #a6f4ff;
-}
-
-.decision-outcome strong {
-  color: var(--emerald);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1100px) {
@@ -763,7 +702,6 @@ function openQr(event: MouseEvent) {
 
 @media (max-width: 760px) {
   .admin-grid,
-  .decisions-grid,
   .lifecycle-grid {
     grid-template-columns: 1fr;
   }
@@ -776,7 +714,7 @@ function openQr(event: MouseEvent) {
   }
 
   .video-thumb {
-    width: 140px;
+    width: 136px;
   }
 
   .phone-strip {

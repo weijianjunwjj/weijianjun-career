@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref } from 'vue'
+import CaseValueStrip from './CaseValueStrip.vue'
+import DecisionAccordion from './DecisionAccordion.vue'
 import { lowcodeCase } from '../workData.ts'
 import {
   AGGREGATE_LABELS,
@@ -297,12 +299,14 @@ onBeforeUnmount(() => {
       <!-- Case Header -->
       <header class="case-header glass-panel">
         <div class="case-badges">
-          <span class="badge badge-cyan">{{ lowcodeCase.number }} · {{ lowcodeCase.tier }}</span>
+          <span class="badge badge-emerald">{{ lowcodeCase.number }} · {{ lowcodeCase.tier }}</span>
           <span class="mono case-period">{{ lowcodeCase.scopeLabel }}</span>
         </div>
 
-        <h2 class="case-title">{{ lowcodeCase.title }}</h2>
+        <h1 class="case-title">{{ lowcodeCase.title }}</h1>
         <p class="case-subtitle">{{ lowcodeCase.subtitle }}</p>
+
+        <CaseValueStrip :trio="lowcodeCase.valueTrio" accent="emerald" />
 
         <div class="tag-row">
           <span v-for="tech in lowcodeCase.stack" :key="tech" class="tech-chip">{{ tech }}</span>
@@ -898,27 +902,21 @@ onBeforeUnmount(() => {
         <p class="provenance-note">{{ lowcodeCase.evidenceNote }}</p>
       </div>
 
-      <!-- 4 Technical Decisions -->
-      <div class="decisions-grid">
-        <article
-          v-for="item in lowcodeCase.decisions"
-          :key="item.index"
-          class="glass-panel decision-card"
-        >
-          <span class="mono decision-index">DECISION {{ item.index }}</span>
-          <h3 class="decision-title">{{ item.title }}</h3>
-          <p class="decision-row"><strong>痛点：</strong>{{ item.problem }}</p>
-          <p class="decision-row"><strong>决策：</strong>{{ item.decision }}</p>
-          <p class="decision-outcome"><strong>结果：</strong>{{ item.outcome }}</p>
-        </article>
-      </div>
+      <!-- 4 Technical Decisions (Progressive Disclosure: 2 open by default) -->
+      <DecisionAccordion
+        :decisions="lowcodeCase.decisions"
+        :default-open-count="2"
+        accent="emerald"
+        section-id="lowcode-decisions"
+      />
     </div>
   </section>
 </template>
 
 <style scoped>
 .case-section {
-  padding-block: clamp(28px, 4vw, 52px);
+  padding-top: 16px;
+  padding-bottom: clamp(24px, 3.2vw, 40px);
 }
 
 .case-stack {

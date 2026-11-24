@@ -17,10 +17,10 @@ const emit = defineEmits<{
 const menuOpen = ref(false)
 
 const tabs: { id: WorkCaseId; label: string; path: string }[] = [
-  { id: 'all', label: '全景总览', path: '/' },
+  { id: 'all', label: '项目索引', path: '/' },
   { id: 'courier', label: '01 中邮通', path: '/projects/courier/' },
-  { id: 'lowcode', label: '02 低代码引擎', path: '/projects/lowcode/' },
-  { id: 'analytics', label: '03 友谊时光', path: '/projects/analytics/' },
+  { id: 'analytics', label: '02 友谊时光', path: '/projects/analytics/' },
+  { id: 'lowcode', label: '03 低代码引擎', path: '/projects/lowcode/' },
   { id: 'liveshop', label: '04 LiveShop', path: '/projects/liveshop/' },
 ]
 
@@ -183,6 +183,7 @@ function selectTab(tab: { id: WorkCaseId; path: string }) {
   font-size: 13px;
   font-weight: 500;
   color: var(--ink-secondary);
+  white-space: nowrap;
   transition: background-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
 }
 

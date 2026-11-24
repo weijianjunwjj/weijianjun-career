@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import AppIcon from './AppIcon.vue'
 
 export interface LightboxChapter {
@@ -37,10 +37,28 @@ const currentIndex = ref(0)
 const activeItem = computed<LightboxItem | null>(() => props.items[currentIndex.value] ?? null)
 const canNavigate = computed(() => props.items.length > 1)
 
+function handleGlobalKeydown(event: KeyboardEvent) {
+  if (!props.open) return
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeDialog()
+  } else if (event.key === 'ArrowLeft') {
+    step(-1)
+  } else if (event.key === 'ArrowRight') {
+    step(1)
+  }
+}
+
 watch(
   () => [props.open, props.startIndex] as const,
   async ([isOpen, idx]) => {
     currentIndex.value = Math.max(0, Math.min(idx, Math.max(0, props.items.length - 1)))
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keydown', handleGlobalKeydown)
+      if (isOpen) {
+        window.addEventListener('keydown', handleGlobalKeydown)
+      }
+    }
     await nextTick()
     const el = dialogRef.value
     if (!el) return
@@ -53,6 +71,12 @@ watch(
   },
   { immediate: true },
 )
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handleGlobalKeydown)
+  }
+})
 
 function closeDialog() {
   videoRef.value?.pause()
@@ -88,6 +112,11 @@ function seekChapter(seconds: number) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    closeDialog()
+    return
+  }
   if (event.key === 'ArrowLeft') step(-1)
   if (event.key === 'ArrowRight') step(1)
 }

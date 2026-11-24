@@ -1,8 +1,32 @@
 import { publicAsset } from '../utils/publicAsset.ts'
 import type { LightboxChapter } from '../components/MediaLightbox.vue'
 
-export type WorkCaseId = 'all' | 'courier' | 'lowcode' | 'analytics' | 'liveshop'
+export type WorkCaseId = 'all' | 'courier' | 'analytics' | 'lowcode' | 'liveshop'
 export type CourierSubView = 'overview' | 'mini' | 'admin'
+
+export interface CaseValueTrio {
+  whatIDid: string
+  hardProblem: string
+  whyItMatters: string
+}
+
+export interface WorkIndexCard {
+  id: Exclude<WorkCaseId, 'all'>
+  path: string
+  number: string
+  tier: string
+  accent: 'cyan' | 'violet' | 'emerald'
+  company: string
+  period: string
+  title: string
+  valuePitch: string
+  proofItems: string[]
+  thumb: string
+  thumbAlt: string
+  secondaryThumb?: string
+  secondaryAlt?: string
+  ctaLabel: string
+}
 
 export interface EvidenceMedia {
   id: string
@@ -48,30 +72,109 @@ export interface AsyncScenario {
 export const workOverviewStats = [
   {
     value: '4 大真实业务体系',
-    label: '中邮通 / 低代码引擎 / 友谊时光 / LiveShop',
-    detail: '覆盖微信小程序、低代码物料引擎、微前端数据平台与中后台',
+    label: '中邮通 · 友谊时光 EBI · 低代码引擎 · LiveShop',
+    detail: '按业务复杂度与高级前端区分度排序，点击直达单项目深度验证',
   },
   {
-    value: '20 张实拍 + 2 段录屏 + 交互沙盒',
-    label: '真机脱敏、H5 演示与低代码实时演练',
-    detail: '含真机支付分录屏、LiveShop 7 屏 App 演示、51 秒后台录屏及低代码沙盒',
+    value: '20 张实拍 + 2 录屏 + 2 交互沙盒',
+    label: '真机脱敏、功能复现与可实操引擎沙盒',
+    detail: '含真机支付分录屏、异步出单状态机、低代码 3 合 1 沙盒与 LiveShop 7 屏',
   },
   {
-    value: '100% 边界可核验',
-    label: '明确标注样本来源与个人职责',
-    detail: '严格区分真机历史记录、脱敏独立复现与平台既有基座边界',
+    value: '100% 权责边界透明',
+    label: '明确区分真机历史、独立复现与团队协作边界',
+    detail: '所有案例直出“我做了什么 / 解决什么难题 / 为什么值得认可”',
+  },
+]
+
+export const workIndexCards: WorkIndexCard[] = [
+  {
+    id: 'courier',
+    path: '/projects/courier/',
+    number: '01',
+    tier: '核心业务 · 快递履约双端',
+    accent: 'cyan',
+    company: '南京递吾件融',
+    period: '2023.08 — 2025.05',
+    title: '中邮通快递体系 · 逍遥邮小程序与运营后台',
+    valuePitch:
+      '独立主导微信原生小程序与 Vue 3 后台双端：收敛微信支付分异步出单不确定性，内置双 CSV 账单差异对账工具。',
+    proofItems: ['5 张真机图', '4 张后台图', '2 段分章录屏', '异步出单状态机', '线上小程序码'],
+    thumb: publicAsset('evidence/courier/admin-orders.webp'),
+    thumbAlt: '逍遥邮运营后台订单管理截图',
+    secondaryThumb: publicAsset('evidence/courier/mini-booking.webp'),
+    secondaryAlt: '逍遥邮微信小程序扫码寄件真机截图',
+    ctaLabel: '进入双端证据与状态机',
+  },
+  {
+    id: 'analytics',
+    path: '/projects/analytics/',
+    number: '02',
+    tier: '架构治理 · 微前端数据平台',
+    accent: 'violet',
+    company: '友谊时光科技',
+    period: '2025.08 — 2026.05',
+    title: '友谊时光 · EBI 游戏行为分析与 SDK 监控',
+    valuePitch:
+      '不推倒 Vue 2.6 老系统，以 Options API 页面级 Store 根治 RefImpl 失活（沉淀 3 个 npm 包），统一 Webpack 5 缓存提效 300s → 30s。',
+    proofItems: ['3 组脱敏业务复现', '300s→30s 构建根因', '4 项架构决策', '3 个 npm 开源包'],
+    thumb: publicAsset('evidence/portfolio/sdk-monitor.jpg'),
+    thumbAlt: '友谊时光 SDK 实时异常事件监控脱敏复现截图',
+    ctaLabel: '进入 EBI 复现与治理决策',
+  },
+  {
+    id: 'lowcode',
+    path: '/projects/lowcode/',
+    number: '03',
+    tier: '平台工程 · 低代码引擎沙盒',
+    accent: 'emerald',
+    company: '企业级低代码平台（脱敏）',
+    period: 'Vue 3 引擎组件库',
+    title: '企业级低代码平台 · 图表数据层与渲染权限',
+    valuePitch:
+      '重构 4 类图表统一数据源（+365 / −735 行）与 O(n) 二维 Map 多维透视，闭环 CRUD 异步导入轮询与审批字段权限合流。',
+    proofItems: ['四层架构改动落点图', '图表透视交互沙盒', '审批字段权限沙盒', 'CRUD 并发轮询沙盒'],
+    thumb: publicAsset('evidence/portfolio/lowcode-workbench.jpg'),
+    thumbAlt: '企业级低代码平台独立复现交互沙盒界面',
+    ctaLabel: '进入 3 合 1 低代码沙盒',
+  },
+  {
+    id: 'liveshop',
+    path: '/projects/liveshop/',
+    number: '04',
+    tier: '跨端电商 · App 与后台',
+    accent: 'cyan',
+    company: '南京递吾件融',
+    period: '2023.08 — 2025.05',
+    title: 'LiveShop 海外社交电商 · uni-app 与后台',
+    valuePitch:
+      '主导海外 App 社区/商城/订单主流程及 X OAuth / PayPal / Google Play IAP 桥接，协同完成后台动态路由与 109 个接口 AST 覆测。',
+    proofItems: ['7 屏 App H5 Mock', '后台订单截图', '109 API AST 覆测', '清晰权责边界'],
+    thumb: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
+    thumbAlt: 'LiveShop 运营后台商品订单管理截图',
+    secondaryThumb: publicAsset('evidence/liveshop/app-home.webp'),
+    secondaryAlt: 'LiveShop uni-app 首页发现流截图',
+    ctaLabel: '进入双端证据与权责边界',
   },
 ]
 
 export const courierCase = {
   id: 'courier' as const,
   number: '01',
-  tier: '核心项目 · 快递履约双端体系',
+  tier: '核心业务 · 快递履约双端体系',
   company: '南京递吾件融网络科技有限公司',
   period: '2023.08 — 2025.05',
   title: '中邮通快递体系 · 逍遥邮小程序与运营管理后台',
   subtitle:
-    '同一套快递业务的双向前端交付：C 端/站长端微信原生小程序承担扫码寄件与微信支付分「先寄后付」，B 端 Vue 3 + Naive UI 后台承担多维订单管理、出账汇总、双账单 CSV 差异比对与角色权限管控。',
+    '独立主导同一套快递业务的双向前端交付：C 端/站长端微信原生小程序承担扫码寄件与微信支付分「先寄后付」，B 端 Vue 3 + Naive UI 后台承担多维订单管理、出账汇总、双账单 CSV 差异比对与角色权限管控。',
+  valueTrio: {
+    whatIDid:
+      '独立主导微信原生小程序（主包寄件支付 + station/ 站长独立分包）与 Vue 3 运营后台双端前端架构与接口联调。',
+    hardProblem:
+      '微信支付分授权后运单号分配与余额校验属服务端异步过程，弱网或回调延迟极易导致用户停留在“出单中”死角；财务手工对账效率低。',
+    whyItMatters:
+      '落地 WebSocket + 3s 静默轮询 + 17s/20s 终检的有界状态机，保留真机录屏、线上小程序码与前端双 CSV 秒级比对工具可逐项核验。',
+  } satisfies CaseValueTrio,
   stack: [
     '微信原生小程序',
     '微信支付 / 微信支付分',
@@ -385,12 +488,20 @@ export const courierCase = {
 
 export const lowcodeCase = {
   id: 'lowcode' as const,
-  number: '02',
+  number: '03',
   tier: '平台工程 · 物料与数据层',
   scopeLabel: '企业级低代码平台 · Vue 3 组件库包',
   title: '企业级低代码平台 · 物料协议、图表数据层与渲染权限',
   subtitle:
     '以独立组件库包集成到宿主业务后台的 Vue 3 低代码引擎。平台设计器画布、Schema 协议与流程编排由团队既有建设；本人聚焦引擎内部的图表配置驱动数据层与多维透视、CRUD 异步导入导出闭环、渲染器审批节点字段级权限透传及多款配置物料扩展。',
+  valueTrio: {
+    whatIDid:
+      '在团队既有低代码引擎基座上，重构 4 类图表统一数据源与多维透视、从零交付 CRUD 通用异步导入导出，并改造渲染器审批字段权限与扩展物料。',
+    hardProblem:
+      '四类图表查询拼装逻辑割裂且缺失组合易错位；通用动态表导入轮询易发生定时器泄漏；旧渲染器把不可读不可写审批字段误显为只读态。',
+    whyItMatters:
+      '图表数据层净减 ~370 行（+365 / −735），二维 Map 实现 O(n) 透视补零；下方提供四层改动落点图与 3 组可实时操作的脱敏交互沙盒。',
+  } satisfies CaseValueTrio,
   stack: ['Vue 3', 'ECharts', 'Element Plus', 'Schema / 物料协议', '多维透视 Map', '异步任务轮询'],
   highlights: [
     {
@@ -454,13 +565,21 @@ export const lowcodeCase = {
 
 export const analyticsCase = {
   id: 'analytics' as const,
-  number: '03',
-  tier: '真实企业案例 · 微前端数据平台与渐进治理',
+  number: '02',
+  tier: '架构治理 · 微前端数据平台与渐进治理',
   company: '友谊时光科技股份有限公司',
   period: '2025.08 — 2026.05',
   title: 'EBI 游戏行为分析、SDK 异常监控与 CRM 规则配置',
   subtitle:
     '面向游戏运营、数据与研发团队的高状态密度微前端平台。在既有 Vue 2.6 + single-spa + Lerna Monorepo 体系内，不做推倒重来，而是通过页面级 Store、adapter/mapper 数据层与构建缓存根因治理，让复杂页面长期可维护。',
+  valueTrio: {
+    whatIDid:
+      '负责单用户 7 模块行为查询、SDK 异常监控下钻、CRM 奖品树规则配置，并主导页面级状态收敛与微前端构建链路根因排查。',
+    hardProblem:
+      'Vue 2.6 + composition-api 子应用切回前台后 RefImpl 失活；约 10 个子包构建均耗 8.6 分钟且并发触发 Jenkins OOM；CRM 多奖品切换存在校验绕过漏洞。',
+    whyItMatters:
+      '零业务代码改动通过 resolutions 统一 Webpack 5 提效 300s → 30s；不盲目升 Vue 2.7 而落地 Options API 页面级 Store 并沉淀为 3 个 npm 开源包。',
+  } satisfies CaseValueTrio,
   stack: ['Vue 2.6', 'single-spa 微前端', 'Lerna Monorepo', 'Webpack 5', 'ECharts', 'VXE Table', 'Element UI'],
   evidenceNote:
     '以下 3 组界面来自独立脱敏功能复现工作台（原生 ESM + 本地 SQLite 固定模拟样本，不含任何公司源码或生产数据），用于直观还原单用户 7 模块局部状态、SDK 异常监控与 CRM 奖品规则联动。',
@@ -536,12 +655,20 @@ export const analyticsCase = {
 export const liveshopCase = {
   id: 'liveshop' as const,
   number: '04',
-  tier: '双端电商案例 · 海外社交电商 App 与运营后台',
+  tier: '跨端电商 · 海外社交电商 App 与运营后台',
   company: '南京递吾件融网络科技有限公司',
   period: '2023.08 — 2025.05',
   title: 'LiveShop 海外社交电商 · uni-app 客户端与运营管理后台',
   subtitle:
-    '面向海外用户的「首页发现 + 个人主页 + 社区内容 + 跨境商品」社交电商体系：移动端基于 uni-app（Vue 3 + TS）交付首页、个人主页、登录、社区、商城、商品详情与订单主流程；后台基于 Vue 3 + Naive UI 承载多角色菜单权限、商品规格、运营活动与订单履约。',
+    '面向海外用户的「首页发现 + 个人主页 + 社区内容 + 跨境商品」社交电商体系：移动端基于 uni-app（Vue 3 + TS）交付核心业务主流程；后台基于 Vue 3 + Naive UI 承载多角色菜单权限、商品规格与订单履约。',
+  valueTrio: {
+    whatIDid:
+      '主导 uni-app 客户端首页/个人主页/社区/商城/五态订单及海外第三方登录、支付桥接与定位兜底；协同完成运营后台权限联调与本地演示接口盘点。',
+    hardProblem:
+      '海外 X 登录被内嵌 WebView 拦截、Android Google Play 内购需原生 .aar 桥接、定位永久拒绝易静默失败；多域后台接口契约易漂移。',
+    whyItMatters:
+      '完整落地系统浏览器 OAuth 回跳与双通道支付信任边界；基于原始源码恢复 7 屏 H5 演示，TS AST 覆测 109 个后台唯一接口，且坦诚划清团队协作边界。',
+  } satisfies CaseValueTrio,
   positioning:
     'LiveShop 将海外内容社区与商品兑换/交易结合：运营后台配置商品、规格、广告位、预约活动与订单状态，App 端承接海外第三方登录、社区互动、商品选购与多状态订单查询。',
   stack: [

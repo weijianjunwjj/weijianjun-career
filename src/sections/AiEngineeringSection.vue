@@ -56,11 +56,11 @@ function openDemoVideo(event: MouseEvent) {
       <header class="section-header" data-reveal>
         <span class="eyebrow">
           <span class="eyebrow-dot" />
-          <span>AI APPLICATION &amp; AGENT ENGINEERING</span>
+          <span>AI ENGINEERING LEVERAGE</span>
         </span>
-        <h2 class="section-title">AI 工程化：从“生成代码”到“可验证交付”</h2>
+        <h2 class="section-title">AI 工程化加持：用前端确定性思维驾驭 Agent 与流式应用</h2>
         <p class="section-lead">
-          真正稀缺的不是会调 Prompt，而是能用工程边界、独立验收、流式协议和持久化模型把 AI 变成稳定生产力。
+          不是停留在调用 Prompt，而是把复杂前端的状态边界、流式协议排障与独立验收机制，变成团队可落地的 AI 生产力。
         </p>
       </header>
 
@@ -94,7 +94,7 @@ function openDemoVideo(event: MouseEvent) {
               rel="noopener noreferrer"
               class="btn btn-portal btn-sm"
             >
-              <span>访问 NovaWing 展示站</span>
+              <span>NovaWing 展示站</span>
               <AppIcon name="arrow-up-right" :size="14" />
             </a>
             <a
@@ -183,20 +183,6 @@ function openDemoVideo(event: MouseEvent) {
               <p class="evidence-caption-title">{{ activeEvidence.title }}</p>
               <p class="evidence-caption-text">{{ activeEvidence.text }}</p>
             </div>
-
-            <div class="evidence-repo-bar">
-              <span class="mono evidence-repo-label">GITHUB 源码</span>
-              <a
-                :href="novaWing.links.repo"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="evidence-repo-link"
-              >
-                <AppIcon name="github" :size="14" />
-                <span class="mono">{{ novaWing.links.repo }}</span>
-                <AppIcon name="arrow-up-right" :size="13" />
-              </a>
-            </div>
           </div>
 
           <div class="nova-demo-box">
@@ -237,7 +223,7 @@ function openDemoVideo(event: MouseEvent) {
         </div>
       </article>
 
-      <!-- Companion AI Projects: OfferFlow + Enterprise Streaming Fix -->
+      <!-- Companion AI Projects: Enterprise Streaming Fix + OfferFlow -->
       <div class="companions-grid" data-reveal>
         <article
           v-for="item in aiCompanions"
@@ -275,9 +261,9 @@ function openDemoVideo(event: MouseEvent) {
 
 <style scoped>
 .nova-workbench {
-  padding: clamp(22px, 3vw, 34px);
+  padding: clamp(20px, 2.8vw, 30px);
   display: grid;
-  gap: 24px;
+  gap: 20px;
   border-color: rgba(139, 92, 246, 0.34);
   background:
     radial-gradient(55% 65% at 0% 0%, rgba(139, 92, 246, 0.12), transparent 65%),
@@ -290,12 +276,12 @@ function openDemoVideo(event: MouseEvent) {
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: 16px;
 }
 
 .nova-title-group {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   max-width: 72ch;
 }
 
@@ -313,21 +299,21 @@ function openDemoVideo(event: MouseEvent) {
 
 .nova-title {
   margin: 0;
-  font-size: clamp(22px, 2.5vw, 30px);
+  font-size: clamp(21px, 2.4vw, 28px);
   line-height: 1.2;
   color: var(--ink-primary);
 }
 
 .nova-headline {
   margin: 0;
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 600;
   color: #a6f4ff;
 }
 
 .nova-desc {
   margin: 0;
-  font-size: 14px;
+  font-size: 13.8px;
   color: var(--ink-secondary);
 }
 
@@ -339,12 +325,12 @@ function openDemoVideo(event: MouseEvent) {
 
 /* Guarded pipeline */
 .pipeline-panel {
-  padding: 16px;
+  padding: 15px;
   border-radius: var(--radius-md);
   border: 1px solid rgba(148, 179, 255, 0.16);
   background: rgba(4, 8, 19, 0.78);
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .pipeline-kicker {
@@ -362,7 +348,7 @@ function openDemoVideo(event: MouseEvent) {
 .pipeline-node {
   display: grid;
   gap: 3px;
-  padding: 11px 10px;
+  padding: 10px;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(148, 179, 255, 0.14);
   background: rgba(11, 19, 38, 0.8);
@@ -385,6 +371,7 @@ function openDemoVideo(event: MouseEvent) {
 .node-step {
   font-size: 10.5px;
   color: var(--ink-muted);
+  white-space: nowrap;
 }
 
 .node-en {
@@ -418,7 +405,7 @@ function openDemoVideo(event: MouseEvent) {
 .nova-media-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.85fr);
-  gap: 20px;
+  gap: 18px;
   align-items: start;
 }
 
@@ -452,7 +439,7 @@ function openDemoVideo(event: MouseEvent) {
 }
 
 .nova-evidence-box img {
-  max-height: 310px;
+  max-height: 290px;
   width: 100%;
   object-fit: contain;
   background: #0b101b;
@@ -476,43 +463,9 @@ function openDemoVideo(event: MouseEvent) {
   color: var(--ink-secondary);
 }
 
-.evidence-repo-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-  padding: 10px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(56, 232, 255, 0.24);
-  background: rgba(6, 11, 24, 0.82);
-}
-
-.evidence-repo-label {
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-}
-
-.evidence-repo-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--cyan);
-  font-size: 12.5px;
-  text-decoration: none;
-  word-break: break-all;
-  transition: color 0.2s var(--ease-out);
-}
-
-.evidence-repo-link:hover {
-  color: #ffffff;
-  text-decoration: underline;
-}
-
 .nova-demo-box {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .problem-solution-stack {
@@ -521,7 +474,7 @@ function openDemoVideo(event: MouseEvent) {
 }
 
 .ps-card {
-  padding: 14px 16px;
+  padding: 13px 15px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line-subtle);
   background: rgba(6, 11, 24, 0.72);
@@ -571,7 +524,7 @@ function openDemoVideo(event: MouseEvent) {
 }
 
 .demo-poster-footer {
-  padding: 14px 16px;
+  padding: 13px 15px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -594,23 +547,23 @@ function openDemoVideo(event: MouseEvent) {
 
 /* Companions */
 .companions-grid {
-  margin-top: 20px;
+  margin-top: 18px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
 .companion-card {
-  padding: clamp(20px, 2.4vw, 26px);
+  padding: clamp(18px, 2.2vw, 24px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 11px;
   align-items: flex-start;
 }
 
 .companion-title {
   margin: 0;
-  font-size: 19px;
+  font-size: 18px;
   color: var(--ink-primary);
 }
 
@@ -624,7 +577,7 @@ function openDemoVideo(event: MouseEvent) {
   margin: 0;
   padding-left: 18px;
   display: grid;
-  gap: 6px;
+  gap: 5px;
   font-size: 13px;
   color: #cad7ef;
 }
@@ -641,7 +594,7 @@ function openDemoVideo(event: MouseEvent) {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 @media (max-width: 1024px) {
