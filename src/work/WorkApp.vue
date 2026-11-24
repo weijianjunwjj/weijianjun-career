@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
 import ResumeLink from '../components/ResumeLink.vue'
 import type { LightboxItem } from '../components/MediaLightbox.vue'
 import WorkNav from './components/WorkNav.vue'
 import CourierCaseSection from './components/CourierCaseSection.vue'
-import LowcodeCaseSection from './components/LowcodeCaseSection.vue'
 import AnalyticsCaseSection from './components/AnalyticsCaseSection.vue'
+import LowcodeCaseSection from './components/LowcodeCaseSection.vue'
 import LiveshopCaseSection from './components/LiveshopCaseSection.vue'
 import { links } from '../data/links.ts'
 import { profile } from '../data/profile.ts'
 import { RESUME_FILENAME } from '../data/siteConfig.ts'
 import {
+  workIndexCards,
   workOverviewStats,
   type CourierSubView,
   type WorkCaseId,
@@ -31,6 +32,78 @@ const lightboxTrigger = ref<HTMLElement | null>(null)
 const buildCommit = __COMMIT_SHA__
 const shortCommit = buildCommit.length > 10 ? buildCommit.slice(0, 7) : buildCommit
 
+const CASE_TITLES: Record<WorkCaseId, string> = {
+  all: `工程项目体验中心 · ${profile.name}｜${profile.positioning}`,
+  courier: `01 中邮通快递双端（逍遥邮） · 工程证据｜${profile.name}`,
+  analytics: `02 友谊时光 EBI 与微前端治理 · 工程证据｜${profile.name}`,
+  lowcode: `03 企业级低代码引擎交互沙盒 · 工程证据｜${profile.name}`,
+  liveshop: `04 LiveShop 海外社交电商双端 · 工程证据｜${profile.name}`,
+}
+
+const CASE_ANCHORS: Record<Exclude<WorkCaseId, 'all'>, { label: string; href: string }[]> = {
+  courier: [
+    { label: '双端录屏与截图', href: '#courier-evidence' },
+    { label: '异步出单状态机', href: '#courier-simulator' },
+    { label: '核心技术决策', href: '#courier-decisions' },
+  ],
+  analytics: [
+    { label: '3 组脱敏业务复现', href: '#analytics-replay' },
+    { label: '核心技术决策', href: '#analytics-decisions' },
+  ],
+  lowcode: [
+    { label: '四层架构落点', href: '#lowcode-arch' },
+    { label: '3 合 1 交互沙盒', href: '#lowcode-sandbox' },
+    { label: '核心技术决策', href: '#lowcode-decisions' },
+  ],
+  liveshop: [
+    { label: 'App 核心界面', href: '#liveshop-app' },
+    { label: '后台与权责边界', href: '#liveshop-admin' },
+    { label: '核心技术决策', href: '#liveshop-decisions' },
+  ],
+}
+
+const activeCardMeta = computed(() =>
+  activeCase.value === 'all'
+    ? null
+    : (workIndexCards.find((item) => item.id === activeCase.value) ?? null),
+)
+
+const activeAnchors = computed(() =>
+  activeCase.value === 'all' ? [] : CASE_ANCHORS[activeCase.value],
+)
+
+const siblingCases = computed(() => {
+  if (activeCase.value === 'all') return { prev: null, next: null }
+  const idx = workIndexCards.findIndex((item) => item.id === activeCase.value)
+  if (idx < 0) return { prev: null, next: null }
+  return {
+    prev: idx > 0 ? workIndexCards[idx - 1] : null,
+    next: idx < workIndexCards.length - 1 ? workIndexCards[idx + 1] : null,
+  }
+})
+
+function updateDocumentTitle() {
+  if (activeCase.value === 'courier' && courierSubView.value === 'mini') {
+    document.title = `01 中邮通微信小程序 · 真机与支付分证据｜${profile.name}`
+    return
+  }
+  if (activeCase.value === 'courier' && courierSubView.value === 'admin') {
+    document.title = `01 中邮通运营管理后台 · 订单与对账证据｜${profile.name}`
+    return
+  }
+  document.title = CASE_TITLES[activeCase.value]
+}
+
+async function scrollToHashIfPresent() {
+  const hash = window.location.hash
+  if (!hash || hash.length < 2) return
+  await nextTick()
+  const target = document.getElementById(hash.slice(1))
+  if (target) {
+    target.scrollIntoView({ behavior: 'auto', block: 'start' })
+  }
+}
+
 function syncFromLocation() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/'
   if (path === '/projects/courier/mini') {
@@ -42,16 +115,18 @@ function syncFromLocation() {
   } else if (path === '/projects/courier') {
     activeCase.value = 'courier'
     courierSubView.value = 'overview'
-  } else if (path === '/projects/lowcode') {
-    activeCase.value = 'lowcode'
   } else if (path === '/projects/analytics') {
     activeCase.value = 'analytics'
+  } else if (path === '/projects/lowcode') {
+    activeCase.value = 'lowcode'
   } else if (path === '/projects/liveshop') {
     activeCase.value = 'liveshop'
   } else {
     activeCase.value = 'all'
     courierSubView.value = 'overview'
   }
+  updateDocumentTitle()
+  void scrollToHashIfPresent()
 }
 
 function navigateTo(target: { caseId: WorkCaseId; path: string }) {
@@ -59,9 +134,10 @@ function navigateTo(target: { caseId: WorkCaseId; path: string }) {
   if (target.caseId === 'courier' && target.path === '/projects/courier/') {
     courierSubView.value = 'overview'
   }
-  if (window.location.pathname !== target.path) {
+  if (window.location.pathname !== target.path || window.location.hash) {
     window.history.pushState({}, '', target.path)
   }
+  updateDocumentTitle()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -76,6 +152,7 @@ function handleCourierSubView(view: CourierSubView) {
   if (activeCase.value === 'courier' && window.location.pathname !== nextPath) {
     window.history.pushState({}, '', nextPath)
   }
+  updateDocumentTitle()
 }
 
 function handleOpenMedia(payload: {
@@ -102,53 +179,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('popstate', syncFromLocation)
 })
-
-const dockCards: {
-  id: WorkCaseId
-  path: string
-  index: string
-  tier: string
-  title: string
-  summary: string
-  proof: string
-}[] = [
-  {
-    id: 'courier',
-    path: '/projects/courier/',
-    index: '01',
-    tier: '核心项目',
-    title: '中邮通快递体系（逍遥邮）',
-    summary: '微信原生小程序先寄后付 + 异步出单状态机 + Vue 3 运营后台双账单 CSV 比对',
-    proof: '5 张真机截图 · 4 张后台截图 · 2 段录屏 · 小程序码',
-  },
-  {
-    id: 'lowcode',
-    path: '/projects/lowcode/',
-    index: '02',
-    tier: '平台工程 · 物料与数据层',
-    title: '企业级低代码平台（独立沙盒）',
-    summary: 'Vue 3 低代码引擎物料三件套 · 图表统一数据源与 O(n) 多维透视 · CRUD 异步轮询与字段权限',
-    proof: '四层架构落点图 · 3 组可交互引擎演练台 · 4 项工程取舍',
-  },
-  {
-    id: 'analytics',
-    path: '/projects/analytics/',
-    index: '03',
-    tier: '真实企业案例',
-    title: '友谊时光 · EBI 与 SDK 监控',
-    summary: 'Vue 2.6 Options API 页面级 Store 治理 · 7 模块局部状态 · Webpack 5 缓存 300s → 30s',
-    proof: '3 组脱敏复现视图 · 4 项架构决策 · 3 开源包',
-  },
-  {
-    id: 'liveshop',
-    path: '/projects/liveshop/',
-    index: '04',
-    tier: '双端电商案例',
-    title: 'LiveShop 海外社交电商',
-    summary: 'uni-app 海外社区/电商/订单 App + Vue 3 运营后台双端联动 · X OAuth 与 PayPal/Google Play 接入',
-    proof: '7 张 App 界面（H5 Mock）· 后台订单图 · 双端关系图 · 109 API',
-  },
-]
 </script>
 
 <template>
@@ -157,32 +187,30 @@ const dockCards: {
     <WorkNav :active-case="activeCase" @navigate="navigateTo" />
 
     <main id="work-main">
-      <!-- Executive Workbench Hero -->
-      <section class="work-hero">
+      <!-- Option A: Lightweight Project Index Workbench (Only shown on '/') -->
+      <section v-if="activeCase === 'all'" class="work-index-hub">
         <div class="container work-hero-stack">
-          <div class="work-hero-top">
+          <div class="index-hero-top">
             <div class="work-hero-copy">
               <div class="hero-badges">
                 <span class="badge badge-cyan">
                   <span class="eyebrow-dot" />
                   <span>{{ profile.positioning }}</span>
                 </span>
-                <span class="mono hero-domain">work.weijianjun.me</span>
+                <span class="mono hero-domain">work.weijianjun.me · 技术验证索引台</span>
               </div>
 
-              <h1 class="work-hero-title">
-                真实业务 · 可验证工程证据工作台
-              </h1>
+              <h1 class="work-hero-title">真实业务 · 工程证据项目索引</h1>
               <p class="work-hero-lead">
-                无需在几十个静态链接间反复跳转：这里按业务复杂度与真实证据密度，集中呈现中邮通快递体系、企业级低代码平台、友谊时光数据平台与 LiveShop 后台的架构决策、脱敏界面、真机录屏与交互式沙盒。
+                按业务复杂度与高级前端区分度排布四大真实体系。点击任意项目，首屏直达该项目价值结论、脱敏实拍、录屏、交互沙盒与工程取舍，无需在巨型长页中翻找。
               </p>
 
               <div class="work-hero-actions">
-                <a :href="links.main" class="btn btn-portal">
-                  <AppIcon name="arrow-left" :size="15" />
-                  <span>返回魏建军个人主页 (weijianjun.me)</span>
+                <a :href="links.main" class="btn btn-portal btn-sm">
+                  <AppIcon name="arrow-left" :size="14" />
+                  <span>返回个人主页 (weijianjun.me)</span>
                 </a>
-                <ResumeLink label="下载完整简历 (PDF)" variant="primary" />
+                <ResumeLink label="下载完整简历 (PDF)" variant="primary" compact />
               </div>
             </div>
 
@@ -190,63 +218,177 @@ const dockCards: {
               <article v-for="stat in workOverviewStats" :key="stat.label" class="stat-tile">
                 <p class="mono stat-val">{{ stat.value }}</p>
                 <p class="stat-label">{{ stat.label }}</p>
-                <p class="stat-detail">{{ stat.detail }}</p>
               </article>
             </div>
           </div>
 
-          <!-- Instant 4-Case Dock (Zero Click Tax) -->
-          <div class="case-dock" aria-label="四大真实工程案例快速切换">
-            <button
-              v-for="card in dockCards"
+          <!-- 2x2 Visual Project Index Grid -->
+          <div class="index-grid" aria-label="四大真实工程案例导航">
+            <article
+              v-for="card in workIndexCards"
               :key="card.id"
-              type="button"
-              class="dock-card"
-              :class="{ 'is-active': activeCase === card.id }"
-              @click="navigateTo({ caseId: card.id, path: card.path })"
+              class="glass-panel glass-panel-interactive index-card"
+              :class="`tone-${card.accent}`"
             >
-              <div class="dock-head">
-                <span class="mono dock-idx">{{ card.index }} · {{ card.tier }}</span>
-                <AppIcon name="arrow-right" :size="14" />
-              </div>
-              <h2 class="dock-title">{{ card.title }}</h2>
-              <p class="dock-summary">{{ card.summary }}</p>
-              <p class="mono dock-proof">{{ card.proof }}</p>
-            </button>
-          </div>
+              <a
+                :href="card.path"
+                class="index-card-link"
+                @click.prevent="navigateTo({ caseId: card.id, path: card.path })"
+              >
+                <div class="index-card-head">
+                  <span
+                    class="badge"
+                    :class="
+                      card.accent === 'violet'
+                        ? 'badge-violet'
+                        : card.accent === 'emerald'
+                          ? 'badge-emerald'
+                          : 'badge-cyan'
+                    "
+                  >
+                    {{ card.number }} · {{ card.tier }}
+                  </span>
+                  <span class="mono index-period">{{ card.company }} · {{ card.period }}</span>
+                </div>
 
-          <div v-if="activeCase !== 'all'" class="filter-bar">
-            <span class="filter-hint">当前聚焦单个案例视图，可随时一键回到四案例全景浏览。</span>
-            <button
-              type="button"
-              class="btn btn-ghost btn-sm"
-              @click="navigateTo({ caseId: 'all', path: '/' })"
-            >
-              查看全部 4 个案例全景
-            </button>
+                <div class="index-preview" :class="{ 'is-dual': Boolean(card.secondaryThumb) }">
+                  <div class="optical-frame index-desktop-thumb">
+                    <img
+                      :src="card.thumb"
+                      :alt="card.thumbAlt"
+                      width="1320"
+                      height="820"
+                    />
+                  </div>
+                  <div v-if="card.secondaryThumb" class="phone-bezel index-phone-thumb">
+                    <div class="phone-bezel-screen">
+                      <img
+                        :src="card.secondaryThumb"
+                        :alt="card.secondaryAlt || card.thumbAlt"
+                        width="390"
+                        height="844"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <h2 class="index-card-title">{{ card.title }}</h2>
+                <p class="index-card-pitch">{{ card.valuePitch }}</p>
+
+                <div class="index-proof-row">
+                  <span v-for="item in card.proofItems" :key="item" class="proof-pill">{{ item }}</span>
+                </div>
+
+                <div class="index-card-cta">
+                  <span>{{ card.ctaLabel }}</span>
+                  <AppIcon name="arrow-right" :size="15" />
+                </div>
+              </a>
+            </article>
           </div>
         </div>
       </section>
 
-      <!-- Case Sections (All visible on '/', or single-focused on deep links) -->
+      <!-- Focused Case Context Bar (Only shown on '/projects/*') -->
+      <div v-else class="case-context-wrap">
+        <div class="container case-context-bar">
+          <div class="context-left">
+            <a
+              href="/"
+              class="btn btn-ghost btn-sm context-back-btn"
+              @click.prevent="navigateTo({ caseId: 'all', path: '/' })"
+            >
+              <AppIcon name="arrow-left" :size="14" />
+              <span>返回 4 项目索引</span>
+            </a>
+            <span v-if="activeCardMeta" class="mono context-crumb">
+              {{ activeCardMeta.number }} / 04 · {{ activeCardMeta.tier }}
+            </span>
+          </div>
+
+          <nav v-if="activeAnchors.length" class="context-anchors" aria-label="当前案例页内快速定位">
+            <a
+              v-for="anchor in activeAnchors"
+              :key="anchor.href"
+              :href="anchor.href"
+              class="context-anchor-link"
+            >
+              {{ anchor.label }}
+            </a>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Focused Individual Case Section (Zero duplicated hero above!) -->
       <CourierCaseSection
-        v-if="activeCase === 'all' || activeCase === 'courier'"
+        v-if="activeCase === 'courier'"
         :sub-view="courierSubView"
         @change-sub-view="handleCourierSubView"
         @open-media="handleOpenMedia"
       />
 
-      <LowcodeCaseSection v-if="activeCase === 'all' || activeCase === 'lowcode'" />
-
       <AnalyticsCaseSection
-        v-if="activeCase === 'all' || activeCase === 'analytics'"
+        v-if="activeCase === 'analytics'"
         @open-media="handleOpenMedia"
       />
+
+      <LowcodeCaseSection v-if="activeCase === 'lowcode'" />
 
       <LiveshopCaseSection
-        v-if="activeCase === 'all' || activeCase === 'liveshop'"
+        v-if="activeCase === 'liveshop'"
         @open-media="handleOpenMedia"
       />
+
+      <!-- Sequential Case Switcher on Individual Pages -->
+      <section v-if="activeCase !== 'all'" class="case-pager-section" aria-label="切换其他项目案例">
+        <div class="container case-pager-grid">
+          <a
+            v-if="siblingCases.prev"
+            :href="siblingCases.prev.path"
+            class="glass-panel pager-card"
+            @click.prevent="
+              navigateTo({ caseId: siblingCases.prev.id, path: siblingCases.prev.path })
+            "
+          >
+            <span class="mono pager-dir">← 上一个案例</span>
+            <strong class="pager-title">
+              {{ siblingCases.prev.number }} · {{ siblingCases.prev.title }}
+            </strong>
+          </a>
+          <a
+            v-else
+            href="/"
+            class="glass-panel pager-card"
+            @click.prevent="navigateTo({ caseId: 'all', path: '/' })"
+          >
+            <span class="mono pager-dir">← 索引总览</span>
+            <strong class="pager-title">返回全部 4 个真实业务项目索引</strong>
+          </a>
+
+          <a
+            v-if="siblingCases.next"
+            :href="siblingCases.next.path"
+            class="glass-panel pager-card is-next"
+            @click.prevent="
+              navigateTo({ caseId: siblingCases.next.id, path: siblingCases.next.path })
+            "
+          >
+            <span class="mono pager-dir">下一个案例 →</span>
+            <strong class="pager-title">
+              {{ siblingCases.next.number }} · {{ siblingCases.next.title }}
+            </strong>
+          </a>
+          <a
+            v-else
+            href="/"
+            class="glass-panel pager-card is-next"
+            @click.prevent="navigateTo({ caseId: 'all', path: '/' })"
+          >
+            <span class="mono pager-dir">完成全部 4 项查验 →</span>
+            <strong class="pager-title">返回项目索引或下载完整简历</strong>
+          </a>
+        </div>
+      </section>
 
       <!-- Reciprocal Return Conversion Banner -->
       <section class="return-section">
@@ -254,9 +396,9 @@ const dockCards: {
           <div class="glass-panel return-panel">
             <div class="return-copy">
               <span class="eyebrow">WEIJIANJUN.ME · PERSONAL BRAND &amp; AI ENGINEERING</span>
-              <h2 class="return-title">想查看 NovaWing Agent 工程化、OfferFlow 全栈 AI 与 7 年履历全貌？</h2>
+              <h2 class="return-title">查看完整 7 年履历、npm 开源资产与 NovaWing AI 工程化？</h2>
               <p class="return-desc">
-                返回个人品牌主站，查看 AI 应用与 Agent 工程化实践、13 分钟 NovaWing 完整运行录屏、npm 开源资产及直接联系方式。
+                返回个人主页查看完整工作经历、掘金专栏、NovaWing 13 分钟运行录屏与直接联系方式。
               </p>
               <p class="mono resume-note">统一简历文件名：{{ RESUME_FILENAME }}</p>
             </div>
@@ -304,9 +446,10 @@ const dockCards: {
 </template>
 
 <style scoped>
-.work-hero {
-  padding-top: clamp(28px, 4vw, 52px);
-  padding-bottom: clamp(24px, 3vw, 36px);
+/* Lightweight Index Hub on '/' */
+.work-index-hub {
+  padding-top: clamp(24px, 3.2vw, 40px);
+  padding-bottom: clamp(20px, 3vw, 36px);
 }
 
 .work-hero-stack {
@@ -314,16 +457,16 @@ const dockCards: {
   gap: 22px;
 }
 
-.work-hero-top {
+.index-hero-top {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.85fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.38fr) minmax(0, 0.82fr);
+  gap: 22px;
   align-items: center;
 }
 
 .work-hero-copy {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .hero-badges {
@@ -340,8 +483,8 @@ const dockCards: {
 
 .work-hero-title {
   margin: 0;
-  font-size: clamp(28px, 3.8vw, 46px);
-  line-height: 1.14;
+  font-size: clamp(26px, 3.4vw, 42px);
+  line-height: 1.15;
   letter-spacing: -0.03em;
   background: linear-gradient(95deg, #ffffff 0%, #8bf0ff 56%, #9cb2ff 100%);
   -webkit-background-clip: text;
@@ -351,25 +494,25 @@ const dockCards: {
 
 .work-hero-lead {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 14px;
   color: var(--ink-secondary);
-  max-width: 66ch;
+  max-width: 64ch;
 }
 
 .work-hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .overview-stats {
   display: grid;
-  gap: 10px;
+  gap: 9px;
 }
 
 .stat-tile {
-  padding: 14px 16px;
+  padding: 12px 15px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-subtle);
   background: rgba(8, 14, 29, 0.78);
@@ -379,117 +522,241 @@ const dockCards: {
 
 .stat-val {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--cyan);
 }
 
 .stat-label {
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-primary);
+  font-size: 12.2px;
+  color: var(--ink-secondary);
 }
 
-.stat-detail {
-  margin: 0;
-  font-size: 12px;
+/* 2x2 Visual Index Grid */
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.index-card {
+  display: flex;
+  overflow: hidden;
+}
+
+.index-card.tone-cyan {
+  border-color: rgba(56, 232, 255, 0.22);
+}
+
+.index-card.tone-violet {
+  border-color: rgba(139, 92, 246, 0.28);
+}
+
+.index-card.tone-emerald {
+  border-color: rgba(34, 211, 168, 0.26);
+}
+
+.index-card-link {
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.index-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.index-period {
+  font-size: 11.5px;
   color: var(--ink-muted);
 }
 
-/* 4-Case Dock */
-.case-dock {
+.index-preview {
+  display: grid;
+  gap: 10px;
+  align-items: end;
+}
+
+.index-preview.is-dual {
+  grid-template-columns: minmax(0, 1fr) 92px;
+}
+
+.index-desktop-thumb img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9.5;
+  object-fit: cover;
+  object-position: top left;
+}
+
+.index-phone-thumb {
+  padding: 4px;
+  border-radius: 14px;
+}
+
+.index-phone-thumb .phone-bezel-screen {
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.index-phone-thumb img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 19;
+  object-fit: cover;
+  object-position: top;
+}
+
+.index-card-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--ink-primary);
+}
+
+.index-card-pitch {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-secondary);
+}
+
+.index-proof-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.proof-pill {
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid rgba(148, 179, 255, 0.14);
+  background: rgba(6, 11, 24, 0.78);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #93f5dc;
+}
+
+.index-card-cta {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+/* Focused Single-Case Context Bar */
+.case-context-wrap {
+  padding-top: 16px;
+}
+
+.case-context-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(56, 232, 255, 0.2);
+  background: rgba(7, 13, 27, 0.86);
+}
+
+.context-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.context-crumb {
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+
+.context-anchors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.context-anchor-link {
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(148, 179, 255, 0.16);
+  background: rgba(16, 27, 51, 0.65);
+  font-size: 12px;
+  color: #cde3ff;
+  transition: border-color 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.context-anchor-link:hover {
+  border-color: var(--cyan);
+  color: #ffffff;
+}
+
+/* Sequential Case Pager */
+.case-pager-section {
+  padding-top: 8px;
+  padding-bottom: 12px;
+}
+
+.case-pager-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
-.dock-card {
+.pager-card {
+  padding: 16px 20px;
   display: grid;
-  gap: 7px;
-  padding: 18px 20px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--line-subtle);
-  background: rgba(8, 14, 29, 0.8);
-  text-align: left;
-  cursor: pointer;
-  align-content: start;
-  transition:
-    border-color 0.2s var(--ease-out),
-    transform 0.2s var(--ease-out),
-    background-color 0.2s var(--ease-out);
+  gap: 4px;
+  transition: border-color 0.2s var(--ease-out), transform 0.2s var(--ease-out);
 }
 
-.dock-card:hover {
+.pager-card:hover {
   border-color: var(--cyan-line);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
-.dock-card.is-active {
-  border-color: var(--cyan);
-  background: linear-gradient(135deg, rgba(56, 232, 255, 0.14), rgba(79, 124, 255, 0.14));
+.pager-card.is-next {
+  text-align: right;
 }
 
-.dock-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.pager-dir {
+  font-size: 11.5px;
   color: var(--cyan);
 }
 
-.dock-idx {
-  font-size: 11.5px;
-  font-weight: 700;
-}
-
-.dock-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
+.pager-title {
+  font-size: 14.5px;
   color: var(--ink-primary);
-}
-
-.dock-summary {
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--ink-secondary);
-}
-
-.dock-proof {
-  margin: 4px 0 0;
-  font-size: 11px;
-  color: #93f5dc;
-}
-
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 12px 16px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(56, 232, 255, 0.28);
-  background: rgba(56, 232, 255, 0.08);
-}
-
-.filter-hint {
-  font-size: 13px;
-  color: #dce9ff;
 }
 
 /* Return Banner */
 .return-section {
-  padding-block: clamp(24px, 4vw, 52px);
+  padding-block: clamp(20px, 3vw, 38px);
 }
 
 .return-panel {
-  padding: clamp(22px, 3vw, 34px);
+  padding: clamp(20px, 2.8vw, 30px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 18px;
   border-color: rgba(56, 232, 255, 0.3);
   background: linear-gradient(
     115deg,
@@ -501,13 +768,13 @@ const dockCards: {
 
 .return-copy {
   display: grid;
-  gap: 6px;
-  max-width: 66ch;
+  gap: 5px;
+  max-width: 64ch;
 }
 
 .return-title {
   margin: 0;
-  font-size: clamp(19px, 2.2vw, 24px);
+  font-size: clamp(18px, 2vw, 22px);
   color: #ffffff;
 }
 
@@ -518,7 +785,7 @@ const dockCards: {
 }
 
 .resume-note {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   font-size: 12px;
   color: var(--cyan);
 }
@@ -582,9 +849,25 @@ const dockCards: {
 }
 
 @media (max-width: 980px) {
-  .work-hero-top,
-  .case-dock {
+  .index-hero-top,
+  .index-grid,
+  .case-pager-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pager-card.is-next {
+    text-align: left;
+  }
+}
+
+@media (max-width: 560px) {
+  .index-preview.is-dual {
+    grid-template-columns: minmax(0, 1fr) 76px;
+    gap: 8px;
+  }
+
+  .context-anchors {
+    width: 100%;
   }
 }
 </style>

@@ -13,26 +13,33 @@ import {
 import { links, navigation } from '../src/data/links.ts'
 import { aiCompanions, gatewayProjects, heroStageItems, novaWing } from '../src/data/projects.ts'
 import { articles, openSource } from '../src/data/articles.ts'
-import { evolutionStages, stackDomains } from '../src/data/skills.ts'
+import { stackDomains } from '../src/data/skills.ts'
 import { education, experience } from '../src/data/experience.ts'
 import { profile } from '../src/data/profile.ts'
 import { socialTags } from '../scripts/site-meta.ts'
-import { analyticsCase, courierCase, liveshopCase, lowcodeCase } from '../src/work/workData.ts'
+import {
+  analyticsCase,
+  courierCase,
+  liveshopCase,
+  lowcodeCase,
+  workIndexCards,
+} from '../src/work/workData.ts'
 import workRoutes from '../src/work/routes.json' with { type: 'json' }
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
 
-test('unified career positioning, factual history and zero internal leakage', () => {
-  assert.equal(POSITIONING, '高级前端工程师｜AI 应用工程化')
+test('unified career positioning, factual history, unified 4-case order and zero internal leakage', () => {
+  assert.equal(POSITIONING, '高级前端工程师 · AI 工程化加持')
   assert.equal(profile.positioning, POSITIONING)
   assert.equal(profile.email, '2661043132@qq.com')
   assert.equal(profile.phone, '18352517082')
+  assert.equal(profile.careerSnapshot.length, 3)
   assert.equal(experience.length, 3)
   assert.deepEqual(
     experience.map((e) => e.company),
     [
       '友谊时光科技股份有限公司',
-      '南京递吾件融网络科技有限公司',
+      '递吾件融网络科技有限公司',
       '文思海辉智科科技有限公司无锡分公司',
     ],
   )
@@ -43,20 +50,37 @@ test('unified career positioning, factual history and zero internal leakage', ()
   assert.equal(education.length, 2)
   assert.equal(education[0].school, '南京邮电大学')
   assert.equal(education[0].period, '2024 — 2026')
-  assert.equal(evolutionStages.length, 4)
   assert.equal(stackDomains.length, 6)
+  assert.ok(stackDomains.every((d) => d.items.length === 4))
   assert.equal(articles[0].title, '页面级 Scope：复杂页面的状态边界')
   assert.equal(openSource.length, 4)
-  assert.equal(gatewayProjects.length, 4)
+
+  const expectedOrder = ['courier', 'analytics', 'lowcode', 'liveshop']
+  assert.deepEqual(
+    heroStageItems.map((p) => p.id),
+    expectedOrder,
+  )
   assert.deepEqual(
     gatewayProjects.map((p) => p.id),
-    ['courier', 'lowcode', 'analytics', 'liveshop'],
+    expectedOrder,
   )
-  assert.equal(heroStageItems.length, 5)
+  assert.deepEqual(
+    workIndexCards.map((p) => p.id),
+    expectedOrder,
+  )
+  assert.equal(courierCase.number, '01')
+  assert.equal(analyticsCase.number, '02')
+  assert.equal(lowcodeCase.number, '03')
+  assert.equal(liveshopCase.number, '04')
+  for (const c of [courierCase, analyticsCase, lowcodeCase, liveshopCase]) {
+    assert.ok(c.valueTrio.whatIDid.length > 10)
+    assert.ok(c.valueTrio.hardProblem.length > 10)
+    assert.ok(c.valueTrio.whyItMatters.length > 10)
+  }
+
   assert.equal(novaWing.flow.length, 6)
   assert.equal(novaWing.evidence.length, 3)
   assert.equal(novaWing.links.repo, 'https://github.com/weijianjunwjj/nova-wing')
-  assert.equal(gatewayProjects.find((p) => p.id === 'liveshop')?.appPreviews?.length, 4)
   assert.equal(aiCompanions.length, 2)
   assert.equal(liveshopCase.appEvidence.length, 7)
   assert.equal(liveshopCase.crossEndFlow.length, 4)
@@ -68,9 +92,9 @@ test('unified career positioning, factual history and zero internal leakage', ()
       profile,
       gatewayProjects,
       heroStageItems,
+      workIndexCards,
       novaWing,
       aiCompanions,
-      evolutionStages,
       stackDomains,
       experience,
       education,
@@ -186,7 +210,7 @@ test('main site production dist contains metadata, evidence assets, version.json
   }
 })
 
-test('work subsite dist-work emits all static routes, CNAME, real videos, QR and evidence screenshots', async () => {
+test('work subsite dist-work emits all static routes with distinct titles, CNAME and evidence assets', async () => {
   const html = await readFile(new URL('../dist-work/index.html', import.meta.url), 'utf8')
   assert.ok(html.includes(POSITIONING))
   assert.ok(html.includes('https://weijianjun.me/'))
@@ -198,10 +222,15 @@ test('work subsite dist-work emits all static routes, CNAME, real videos, QR and
   await access(new URL('../dist-work/.nojekyll', import.meta.url))
   await access(new URL('../dist-work/version.json', import.meta.url))
 
+  const seenTitles = new Set()
   for (const route of Object.values(workRoutes)) {
     const entry = route === '/' ? '../dist-work/index.html' : `../dist-work${route}/index.html`
-    await access(new URL(entry, import.meta.url))
+    const routeHtml = await readFile(new URL(entry, import.meta.url), 'utf8')
+    const titleMatch = routeHtml.match(/<title>([^<]+)<\/title>/)
+    assert.ok(titleMatch, `${route} should contain a <title>`)
+    seenTitles.add(titleMatch[1])
   }
+  assert.equal(seenTitles.size, Object.values(workRoutes).length, 'Each static route should have a distinct <title>')
 
   for (const media of [
     '/evidence/courier/mini-demo.mp4',
@@ -233,11 +262,12 @@ test('work subsite dist-work emits all static routes, CNAME, real videos, QR and
   }
 })
 
-test('accessible interaction hooks, reduced motion and zero autoplay are enforced', async () => {
+test('accessible interaction hooks, Escape lightbox close, reduced motion and zero autoplay are enforced', async () => {
   const app = await readFile(new URL('../src/App.vue', import.meta.url), 'utf8')
   assert.match(app, /<main id="main">/)
   const workApp = await readFile(new URL('../src/work/WorkApp.vue', import.meta.url), 'utf8')
   assert.match(workApp, /<main id="work-main">/)
+  assert.match(workApp, /v-if="activeCase === 'all'"/)
   const nav = await readFile(new URL('../src/components/SiteNav.vue', import.meta.url), 'utf8')
   assert.match(nav, /aria-expanded/)
   assert.ok(nav.includes('@keydown.esc'))
@@ -247,5 +277,6 @@ test('accessible interaction hooks, reduced motion and zero autoplay are enforce
   const lightbox = await readFile(new URL('../src/components/MediaLightbox.vue', import.meta.url), 'utf8')
   assert.match(lightbox, /showModal/)
   assert.match(lightbox, /returnFocus\?\.focus/)
+  assert.match(lightbox, /event\.key === 'Escape'/)
   assert.doesNotMatch(lightbox, /\bautoplay\b/)
 })

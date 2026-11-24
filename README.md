@@ -8,7 +8,6 @@ Vue 3 + TypeScript + Vite + pnpm，纯静态；没有后端、CMS、登录、表
 
 - 工作分支：`feat/v0.2-visual-rebuild`。
 - 只做本地审核，**未 merge / push main，未执行生产部署**。
-- 当前生产站仍为 [V0.1](https://weijianjun-career.vercel.app/)；不代表本轮 V0.2 已发布。
 - 四种尺寸完整审核图与验收说明：[`docs/v0.2-review/`](docs/v0.2-review/README.md)。
 - 原始 `assets/` 全部保留，仍是用户原有未跟踪素材；不要为部署盲目 stage 全部文件。
 
@@ -70,7 +69,7 @@ build 包含严格 TypeScript 检查；测试验证构建后的产物，因此�
 
 `scripts/site-meta.ts` 从 profile 统一生成 title、description、OG、X 与 canonical。
 默认使用用户已确认的生产域名；`VITE_SITE_URL` 可覆盖为另一个确认过的纯 HTTPS origin。
-Vercel 配置及安全头保留。
+双站均通过 GitHub Pages 发布（见 `.github/workflows/deploy-pages.yml` 与 `vite.work.config.mjs`）。
 
 **任何 merge / push main / Production Deploy 都必须先获得用户新的明确确认。**
 本轮到本地视觉验收为止，不自动继续 V0.3。

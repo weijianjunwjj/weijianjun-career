@@ -6,8 +6,8 @@ export const links = {
   workCourier: workUrl('projects/courier/'),
   workCourierMini: workUrl('projects/courier/mini/'),
   workCourierAdmin: workUrl('projects/courier/admin/'),
-  workLowcode: workUrl('projects/lowcode/'),
   workAnalytics: workUrl('projects/analytics/'),
+  workLowcode: workUrl('projects/lowcode/'),
   workLiveshop: workUrl('projects/liveshop/'),
   github: 'https://github.com/weijianjunwjj',
   repositories: 'https://github.com/weijianjunwjj?tab=repositories',
@@ -21,8 +21,8 @@ export const links = {
 }
 
 export const navigation = [
-  { label: '核心证据', accessibleLabel: '跳转到核心项目证据入口', href: '#projects' },
-  { label: '能力演进', accessibleLabel: '跳转到技术底盘与能力演进', href: '#evolution' },
-  { label: 'AI 工程化', accessibleLabel: '跳转到 AI 应用与 Agent 工程化', href: '#ai-engineering' },
-  { label: '履历与开源', accessibleLabel: '跳转到工作经历与开源沉淀', href: '#credentials' },
+  { label: '代表项目', accessibleLabel: '跳转到四大真实企业项目证据', href: '#projects' },
+  { label: '核心能力', accessibleLabel: '跳转到前端核心与 AI 工程能力矩阵', href: '#capabilities' },
+  { label: 'AI 工程化', accessibleLabel: '跳转到 AI 工程化加持案例', href: '#ai-engineering' },
+  { label: '履历与开源', accessibleLabel: '跳转到工作经历、教育背景与开源沉淀', href: '#credentials' },
 ]
