@@ -55,6 +55,8 @@ test('unified career positioning, factual history and zero internal leakage', ()
   assert.equal(heroStageItems.length, 4)
   assert.equal(novaWing.flow.length, 6)
   assert.equal(novaWing.evidence.length, 3)
+  assert.equal(novaWing.links.repo, 'https://github.com/weijianjunwjj/nova-wing')
+  assert.equal(gatewayProjects[2].appPreviews?.length, 4)
   assert.equal(aiCompanions.length, 2)
   assert.equal(liveshopCase.appEvidence.length, 7)
   assert.equal(liveshopCase.crossEndFlow.length, 4)
@@ -156,6 +158,10 @@ test('main site production dist contains metadata, evidence assets, version.json
     '/evidence/portfolio/sdk-monitor.jpg',
     '/evidence/portfolio/ebi-user-query.jpg',
     '/evidence/portfolio/liveshop-orders.jpg',
+    '/evidence/liveshop/app-home.webp',
+    '/evidence/liveshop/app-person.webp',
+    '/evidence/liveshop/app-shop.webp',
+    '/evidence/liveshop/app-order.webp',
   ]) {
     await access(new URL(`../dist${asset}`, import.meta.url))
   }

@@ -8,7 +8,7 @@ const emit = defineEmits<{
   openMedia: [payload: { items: LightboxItem[]; startIndex: number; trigger: HTMLElement | null }]
 }>()
 
-function inspectProject(project: GatewayProject, event: MouseEvent, startSecondary = false) {
+function inspectProject(project: GatewayProject, event: MouseEvent, startIndex = 0) {
   const items: LightboxItem[] = [
     {
       kind: 'image',
@@ -19,7 +19,18 @@ function inspectProject(project: GatewayProject, event: MouseEvent, startSeconda
       alt: project.primaryAlt,
     },
   ]
-  if (project.secondaryImage) {
+  if (project.appPreviews && project.appPreviews.length > 0) {
+    for (const preview of project.appPreviews) {
+      items.push({
+        kind: 'image',
+        src: preview.src,
+        title: `${project.title} · App ${preview.label}`,
+        caption: preview.alt,
+        provenance: preview.provenance,
+        alt: preview.alt,
+      })
+    }
+  } else if (project.secondaryImage) {
     items.push({
       kind: 'image',
       src: project.secondaryImage,
@@ -31,7 +42,7 @@ function inspectProject(project: GatewayProject, event: MouseEvent, startSeconda
   }
   emit('openMedia', {
     items,
-    startIndex: startSecondary && items.length > 1 ? 1 : 0,
+    startIndex: startIndex >= 0 && startIndex < items.length ? startIndex : 0,
     trigger: event.currentTarget as HTMLElement | null,
   })
 }
@@ -109,7 +120,7 @@ const liveshop = gatewayProjects[2]
                 type="button"
                 class="optical-media-btn"
                 aria-label="放大查看逍遥邮运营后台订单管理截图"
-                @click="inspectProject(courier, $event, false)"
+                @click="inspectProject(courier, $event, 0)"
               >
                 <img
                   :src="courier.primaryImage"
@@ -130,7 +141,7 @@ const liveshop = gatewayProjects[2]
                 type="button"
                 class="phone-bezel-screen"
                 aria-label="放大查看逍遥邮微信小程序先享后付成功截图"
-                @click="inspectProject(courier, $event, true)"
+                @click="inspectProject(courier, $event, 1)"
               >
                 <img
                   :src="courier.secondaryImage"
@@ -165,7 +176,7 @@ const liveshop = gatewayProjects[2]
                 type="button"
                 class="optical-media-btn"
                 aria-label="放大查看友谊时光 SDK 异常监控复现截图"
-                @click="inspectProject(analytics, $event, false)"
+                @click="inspectProject(analytics, $event, 0)"
               >
                 <img
                   :src="analytics.primaryImage"
@@ -185,7 +196,7 @@ const liveshop = gatewayProjects[2]
                 type="button"
                 class="optical-media-btn"
                 aria-label="放大查看单用户行为查询 7 模块复现截图"
-                @click="inspectProject(analytics, $event, true)"
+                @click="inspectProject(analytics, $event, 1)"
               >
                 <img
                   :src="analytics.secondaryImage"
@@ -222,24 +233,61 @@ const liveshop = gatewayProjects[2]
           <h3 class="card-title">{{ liveshop.title }}</h3>
           <p class="card-summary">{{ liveshop.summary }}</p>
 
-          <div class="optical-frame liveshop-frame">
-            <div class="optical-frame-bar">
-              <span class="optical-dots"><span /><span /><span /></span>
-              <span class="optical-bar-label">LiveShop 商品订单 · 本地合成样本</span>
+          <div class="liveshop-visuals">
+            <div class="optical-frame liveshop-frame">
+              <div class="optical-frame-bar">
+                <span class="optical-dots"><span /><span /><span /></span>
+                <span class="optical-bar-label">运营后台 · 订单与权限</span>
+              </div>
+              <button
+                type="button"
+                class="optical-media-btn"
+                aria-label="放大查看 LiveShop 管理后台商品订单截图"
+                @click="inspectProject(liveshop, $event, 0)"
+              >
+                <img
+                  :src="liveshop.primaryImage"
+                  :alt="liveshop.primaryAlt"
+                  loading="lazy"
+                  width="1320"
+                  height="920"
+                />
+                <span class="optical-zoom-hint">
+                  <AppIcon name="expand" :size="12" />
+                  <span>后台</span>
+                </span>
+              </button>
             </div>
+
+            <div class="phone-bezel liveshop-phone-frame">
+              <button
+                type="button"
+                class="phone-bezel-screen"
+                aria-label="放大查看 LiveShop App 首页发现流截图"
+                @click="inspectProject(liveshop, $event, 1)"
+              >
+                <img
+                  :src="liveshop.secondaryImage"
+                  :alt="liveshop.secondaryAlt"
+                  loading="lazy"
+                  width="390"
+                  height="844"
+                />
+              </button>
+            </div>
+          </div>
+
+          <div v-if="liveshop.appPreviews && liveshop.appPreviews.length > 1" class="liveshop-app-strip">
             <button
+              v-for="(shot, idx) in liveshop.appPreviews.slice(1)"
+              :key="shot.label"
               type="button"
-              class="optical-media-btn"
-              aria-label="放大查看 LiveShop 管理后台商品订单截图"
-              @click="inspectProject(liveshop, $event, false)"
+              class="liveshop-mini-thumb"
+              :aria-label="`放大查看 LiveShop App ${shot.label} 截图`"
+              @click="inspectProject(liveshop, $event, idx + 2)"
             >
-              <img
-                :src="liveshop.primaryImage"
-                :alt="liveshop.primaryAlt"
-                loading="lazy"
-                width="1320"
-                height="920"
-              />
+              <img :src="shot.src" :alt="shot.alt" loading="lazy" width="180" height="390" />
+              <span class="liveshop-mini-label">{{ shot.label }}</span>
             </button>
           </div>
 
@@ -252,7 +300,7 @@ const liveshop = gatewayProjects[2]
               <span v-for="tech in liveshop.stack" :key="tech" class="tech-chip">{{ tech }}</span>
             </div>
             <a :href="liveshop.workHref" class="btn btn-portal btn-sm">
-              <span>查看 LiveShop 后台证据</span>
+              <span>查看 LiveShop 7 屏 App 与后台证据</span>
               <AppIcon name="arrow-up-right" :size="14" />
             </a>
           </div>
@@ -265,7 +313,7 @@ const liveshop = gatewayProjects[2]
           <span class="eyebrow">WORK.WEIJIANJUN.ME · INDEPENDENT WORKBENCH</span>
           <h3 class="portal-banner-title">想直接验看真机支付分录屏、小程序码、异步状态机与完整技术复盘？</h3>
           <p class="portal-banner-desc">
-            工程项目体验中心独立部署，收录中邮通双端录屏与 9 张脱敏真机/后台实拍、友谊时光 EBI/CRM 3 组功能复现与 LiveShop 109 路径联调证据。
+            工程项目体验中心独立部署，收录中邮通双端录屏与 9 张脱敏真机/后台实拍、友谊时光 EBI/CRM 3 组功能复现与 LiveShop 7 屏 uni-app H5 演示及 109 路径联调证据。
           </p>
         </div>
         <a :href="links.work" class="btn btn-primary portal-banner-btn">
@@ -394,6 +442,67 @@ const liveshop = gatewayProjects[2]
   object-position: top left;
 }
 
+.liveshop-visuals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 108px;
+  gap: 10px;
+  align-items: end;
+}
+
+.liveshop-phone-frame img {
+  aspect-ratio: 9 / 19;
+  object-fit: cover;
+  object-position: top;
+}
+
+.liveshop-app-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.liveshop-mini-thumb {
+  position: relative;
+  padding: 0;
+  border: 1px solid rgba(56, 232, 255, 0.22);
+  border-radius: var(--radius-sm);
+  background: rgba(6, 11, 24, 0.85);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease-out),
+    transform 0.2s var(--ease-out);
+}
+
+.liveshop-mini-thumb:hover {
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+}
+
+.liveshop-mini-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.liveshop-mini-label {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 6px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(4, 7, 17, 0.84);
+  border: 1px solid rgba(148, 179, 255, 0.22);
+  color: #e6f0ff;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+}
+
 .decision-list {
   margin: 0;
   padding-left: 18px;
@@ -474,8 +583,9 @@ const liveshop = gatewayProjects[2]
 }
 
 @media (max-width: 640px) {
-  .courier-visuals {
-    grid-template-columns: minmax(0, 1fr) 98px;
+  .courier-visuals,
+  .liveshop-visuals {
+    grid-template-columns: minmax(0, 1fr) 94px;
     gap: 8px;
   }
 
