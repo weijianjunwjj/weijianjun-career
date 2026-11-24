@@ -29,9 +29,9 @@ export interface GatewayAppPreview {
 }
 
 export interface GatewayProject {
-  id: 'courier' | 'analytics' | 'liveshop'
+  id: 'courier' | 'lowcode' | 'analytics' | 'liveshop'
   number: string
-  tier: '核心项目' | '真实企业案例' | '补充案例'
+  tier: '核心项目' | '平台工程' | '真实企业案例' | '补充案例'
   company: string
   period: string
   title: string
@@ -67,6 +67,21 @@ export const heroStageItems: HeroStageItem[] = [
     highlight: '按订单号建立 WebSocket 监听异步出单，异常降级 3s 轮询，17s 停轮询、20s 终检防滞留。',
     actionLabel: '在项目体验中心查看全套录屏与证据',
     actionHref: links.workCourier,
+    isExternal: true,
+  },
+  {
+    id: 'lowcode',
+    tabLabel: '低代码引擎',
+    badge: '平台工程 · 可交互沙盒',
+    title: '企业级低代码平台 · 物料与数据层',
+    subtitle: '配置驱动图表数据层与 O(n) 多维透视 + CRUD 异步导入轮询 + 审批节点字段权限',
+    provenance: '脱敏独立复现（可实时交互的引擎沙盒）',
+    image: publicAsset('evidence/portfolio/lowcode-workbench.jpg'),
+    layout: 'desktop',
+    alt: '企业级低代码平台独立复现沙盒，左侧展示设计态属性配置面板，右侧展示多维透视堆叠柱状图与编译后查询体 JSON',
+    highlight: '在平台既有设计器与物料三件套协议之上，统一 4 类图表数据源（+365 / −735），闭环 CRUD 导入映射与任务轮询。',
+    actionLabel: '在体验中心实操低代码交互沙盒',
+    actionHref: links.workLowcode,
     isExternal: true,
   },
   {
@@ -149,8 +164,33 @@ export const gatewayProjects: GatewayProject[] = [
     ],
   },
   {
-    id: 'analytics',
+    id: 'lowcode',
     number: '02',
+    tier: '平台工程',
+    company: '企业级低代码平台（脱敏展示）',
+    period: 'Vue 3 低代码引擎组件库',
+    title: '企业级低代码平台 · 物料协议、图表数据层与渲染权限',
+    summary:
+      '以独立组件库包集成到宿主管理后台的 Vue 3 低代码引擎。在团队既有设计器与物料协议之上，聚焦图表物料的配置驱动数据层与多维透视、CRUD 异步导入导出闭环、渲染器审批流字段级权限透传及多款配置物料扩展。',
+    keyProof: '四层架构落点图 + 3 组可实时交互的低代码演练台（图表透视 / 字段权限 / 异步任务轮询）',
+    metricsOrDecision: [
+      '统一图表数据层（+365 / −735 行）：抽离公共数据源处理器，支持分组、汇总与日期/数值分桶，二维 Map O(n) 透视生成堆叠系列',
+      'CRUD 通用异步导入导出：模板选择、表头映射、3 种判重策略与仅待处理任务 Promise.allSettled 并发进度轮询 + 自动停表',
+      '物料三件套与渲染权限：遵循 config / panel / runtime 扩展配置物料并隔离设计态脏请求；渲染器透传审批节点字段权限实现合流隐藏',
+    ],
+    stack: ['Vue 3', 'ECharts', 'Element Plus', 'Schema / 物料协议', '多维透视', '异步轮询'],
+    primaryImage: publicAsset('evidence/portfolio/lowcode-workbench.jpg'),
+    primaryAlt: '企业级低代码平台独立复现交互沙盒，展示设计态属性面板、多维透视堆叠柱状图与编译查询 JSON',
+    provenance: '脱敏独立复现（本地模拟样本，原平台代码不公开）',
+    workHref: links.workLowcode,
+    subLinks: [
+      { label: '看四层架构落点图', href: `${links.workLowcode}#lowcode-arch` },
+      { label: '体验交互式低代码沙盒', href: `${links.workLowcode}#lowcode-sandbox` },
+    ],
+  },
+  {
+    id: 'analytics',
+    number: '03',
     tier: '真实企业案例',
     company: '友谊时光科技股份有限公司',
     period: '2025.08 — 2026.05',
@@ -173,7 +213,7 @@ export const gatewayProjects: GatewayProject[] = [
   },
   {
     id: 'liveshop',
-    number: '03',
+    number: '04',
     tier: '补充案例',
     company: '南京递吾件融网络科技有限公司',
     period: '2023.08 — 2025.05',
@@ -342,15 +382,15 @@ export const aiCompanions = [
   },
   {
     id: 'ai-enterprise-fix',
-    badge: '企业 AI 生产排障 · 递吾件融',
-    title: '企业 AI 对话流式协议修复 & 低代码图表数据层',
+    badge: '企业 AI 生产排障 · 流式响应治理',
+    title: '企业 AI 对话应用流式协议修复与状态兜底',
     summary:
-      '不仅做个人 AI 系统，也在企业真实业务中解决 AI 与配置化工程痛点：接手维护公司 AI 对话应用，精准修复“重新生成”把累计流式文本误按增量拼接导致的回答重复问题；并在速众低代码平台完成跨图表共用数据源重构（+365 / −735 行）。',
+      '不仅做个人 AI 系统，也在企业真实产品中排查生产级流式渲染缺陷：接手维护企业 AI 对话应用，精准修复“重新生成”路径把累计流式响应误按增量拼接导致的回答重复与漏帧问题，并补齐流式结束态兜底避免生成光标残留闪烁。',
     decisions: [
-      '流式协议排障：厘清服务端累计帧与增量帧语义边界，根治重新生成场景的重复输出缺陷',
-      '低代码配置化：统一柱状、漏斗、雷达、散点图统计查询转换层，落地 CRUD 异步导入导出与审批流字段权限',
+      '流式协议幂等重建：厘清 axios onDownloadProgress 累计文本与增量片段语义边界，统一按完整 data: 事件重算，根治重复拼接与半包漏字',
+      '完成态统一收口：将 loading 结束态从业务 done 分支放回请求终态兜底，消除异常中断后的光标持续闪烁回归',
     ],
-    stack: ['LLM Streaming', 'Vue 3', 'ECharts', 'Element Plus', 'Schema / 权限透传'],
+    stack: ['LLM Streaming', 'Vue 3', 'TypeScript', 'axios Progress', 'SSE / 流式解析'],
     href: undefined,
     actionLabel: undefined,
   },

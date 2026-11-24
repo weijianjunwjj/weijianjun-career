@@ -19,8 +19,9 @@ const menuOpen = ref(false)
 const tabs: { id: WorkCaseId; label: string; path: string }[] = [
   { id: 'all', label: '全景总览', path: '/' },
   { id: 'courier', label: '01 中邮通', path: '/projects/courier/' },
-  { id: 'analytics', label: '02 友谊时光', path: '/projects/analytics/' },
-  { id: 'liveshop', label: '03 LiveShop', path: '/projects/liveshop/' },
+  { id: 'lowcode', label: '02 低代码引擎', path: '/projects/lowcode/' },
+  { id: 'analytics', label: '03 友谊时光', path: '/projects/analytics/' },
+  { id: 'liveshop', label: '04 LiveShop', path: '/projects/liveshop/' },
 ]
 
 function selectTab(tab: { id: WorkCaseId; path: string }) {

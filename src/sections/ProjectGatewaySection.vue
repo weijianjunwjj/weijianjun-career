@@ -48,8 +48,9 @@ function inspectProject(project: GatewayProject, event: MouseEvent, startIndex =
 }
 
 const courier = gatewayProjects[0]
-const analytics = gatewayProjects[1]
-const liveshop = gatewayProjects[2]
+const lowcode = gatewayProjects[1]
+const analytics = gatewayProjects[2]
+const liveshop = gatewayProjects[3]
 </script>
 
 <template>
@@ -63,7 +64,7 @@ const liveshop = gatewayProjects[2]
           </span>
           <h2 class="section-title">真实企业项目证据 · 直达体验中心</h2>
           <p class="section-lead">
-            不靠概念卡片堆砌：以下三个真实业务体系均保留脱敏界面、录屏或接口覆测证据。主站呈现决策精华，点击任意入口即可进入独立部署的
+            不靠概念卡片堆砌：以下四个真实业务体系均保留脱敏界面、录屏、交互式沙盒或接口覆测证据。主站呈现决策精华，点击任意入口即可进入独立部署的
             <strong class="highlight-domain">work.weijianjun.me</strong> 深度查验。
           </p>
         </div>
@@ -157,7 +158,71 @@ const liveshop = gatewayProjects[2]
           </div>
         </article>
 
-        <!-- 02 Real Enterprise Case: Analytics (Span 7) -->
+        <!-- 02 Platform Engineering: Low-Code Engine (Full-width Asymmetric Feature) -->
+        <article id="lowcode" class="glass-panel glass-panel-interactive lowcode-feature" data-reveal>
+          <div class="courier-content">
+            <div class="card-meta-row">
+              <span class="badge badge-emerald">{{ lowcode.number }} · {{ lowcode.tier }}</span>
+              <span class="mono card-period">{{ lowcode.company }} · {{ lowcode.period }}</span>
+            </div>
+            <h3 class="card-title">{{ lowcode.title }}</h3>
+            <p class="card-summary">{{ lowcode.summary }}</p>
+
+            <ul class="decision-list">
+              <li v-for="point in lowcode.metricsOrDecision" :key="point">{{ point }}</li>
+            </ul>
+
+            <div class="tag-row">
+              <span v-for="tech in lowcode.stack" :key="tech" class="tech-chip">{{ tech }}</span>
+            </div>
+
+            <div class="card-actions">
+              <a :href="lowcode.workHref" class="btn btn-primary btn-sm">
+                <span>进入低代码交互沙盒</span>
+                <AppIcon name="arrow-up-right" :size="14" />
+              </a>
+              <a
+                v-for="sub in lowcode.subLinks"
+                :key="sub.href"
+                :href="sub.href"
+                class="btn btn-ghost btn-sm"
+              >
+                <span>{{ sub.label }}</span>
+                <AppIcon name="arrow-up-right" :size="13" />
+              </a>
+            </div>
+          </div>
+
+          <div class="lowcode-visual">
+            <div class="optical-frame lowcode-frame">
+              <div class="optical-frame-bar">
+                <span class="optical-dots"><span /><span /><span /></span>
+                <span class="optical-bar-label">低代码引擎交互沙盒 · 配置编译 / O(n) 透视 / 异步轮询</span>
+              </div>
+              <button
+                type="button"
+                class="optical-media-btn"
+                aria-label="放大查看企业级低代码平台交互沙盒运行截图"
+                @click="inspectProject(lowcode, $event, 0)"
+              >
+                <img
+                  :src="lowcode.primaryImage"
+                  :alt="lowcode.primaryAlt"
+                  loading="lazy"
+                  width="1320"
+                  height="920"
+                />
+                <span class="optical-zoom-hint">
+                  <AppIcon name="expand" :size="12" />
+                  <span>查看原图</span>
+                </span>
+              </button>
+            </div>
+            <p class="visual-caption">{{ lowcode.keyProof }}</p>
+          </div>
+        </article>
+
+        <!-- 03 Real Enterprise Case: Analytics (Span 7) -->
         <article id="analytics" class="glass-panel glass-panel-interactive case-card case-wide" data-reveal>
           <div class="card-meta-row">
             <span class="badge badge-violet">{{ analytics.number }} · {{ analytics.tier }}</span>
@@ -313,7 +378,7 @@ const liveshop = gatewayProjects[2]
           <span class="eyebrow">WORK.WEIJIANJUN.ME · INDEPENDENT WORKBENCH</span>
           <h3 class="portal-banner-title">想直接验看真机支付分录屏、小程序码、异步状态机与完整技术复盘？</h3>
           <p class="portal-banner-desc">
-            工程项目体验中心独立部署，收录中邮通双端录屏与 9 张脱敏真机/后台实拍、友谊时光 EBI/CRM 3 组功能复现与 LiveShop 7 屏 uni-app H5 演示及 109 路径联调证据。
+            工程项目体验中心独立部署，收录中邮通双端录屏与 9 张脱敏真机/后台实拍、企业级低代码引擎四层架构与三组交互沙盒、友谊时光 EBI/CRM 3 组功能复现与 LiveShop 7 屏 uni-app H5 演示及 109 路径联调证据。
           </p>
         </div>
         <a :href="links.work" class="btn btn-primary portal-banner-btn">
@@ -343,7 +408,8 @@ const liveshop = gatewayProjects[2]
   gap: 20px;
 }
 
-.courier-feature {
+.courier-feature,
+.lowcode-feature {
   grid-column: span 12;
   padding: clamp(20px, 2.8vw, 32px);
   display: grid;
@@ -354,6 +420,24 @@ const liveshop = gatewayProjects[2]
   background:
     radial-gradient(60% 90% at 100% 0%, rgba(56, 232, 255, 0.08), transparent 65%),
     var(--bg-glass);
+}
+
+.lowcode-feature {
+  border-color: rgba(34, 211, 168, 0.28);
+  background:
+    radial-gradient(60% 90% at 100% 0%, rgba(34, 211, 168, 0.09), transparent 65%),
+    var(--bg-glass);
+}
+
+.lowcode-visual {
+  display: grid;
+  gap: 10px;
+}
+
+.lowcode-frame img {
+  aspect-ratio: 1320 / 920;
+  object-fit: cover;
+  object-position: top left;
 }
 
 .courier-content {
@@ -572,7 +656,8 @@ const liveshop = gatewayProjects[2]
 }
 
 @media (max-width: 1024px) {
-  .courier-feature {
+  .courier-feature,
+  .lowcode-feature {
     grid-template-columns: 1fr;
   }
 

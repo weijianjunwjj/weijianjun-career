@@ -17,7 +17,7 @@ import { evolutionStages, stackDomains } from '../src/data/skills.ts'
 import { education, experience } from '../src/data/experience.ts'
 import { profile } from '../src/data/profile.ts'
 import { socialTags } from '../scripts/site-meta.ts'
-import { analyticsCase, courierCase, liveshopCase } from '../src/work/workData.ts'
+import { analyticsCase, courierCase, liveshopCase, lowcodeCase } from '../src/work/workData.ts'
 import workRoutes from '../src/work/routes.json' with { type: 'json' }
 
 const sha256 = (buf) => createHash('sha256').update(buf).digest('hex')
@@ -47,16 +47,16 @@ test('unified career positioning, factual history and zero internal leakage', ()
   assert.equal(stackDomains.length, 6)
   assert.equal(articles[0].title, '页面级 Scope：复杂页面的状态边界')
   assert.equal(openSource.length, 4)
-  assert.equal(gatewayProjects.length, 3)
+  assert.equal(gatewayProjects.length, 4)
   assert.deepEqual(
     gatewayProjects.map((p) => p.id),
-    ['courier', 'analytics', 'liveshop'],
+    ['courier', 'lowcode', 'analytics', 'liveshop'],
   )
-  assert.equal(heroStageItems.length, 4)
+  assert.equal(heroStageItems.length, 5)
   assert.equal(novaWing.flow.length, 6)
   assert.equal(novaWing.evidence.length, 3)
   assert.equal(novaWing.links.repo, 'https://github.com/weijianjunwjj/nova-wing')
-  assert.equal(gatewayProjects[2].appPreviews?.length, 4)
+  assert.equal(gatewayProjects.find((p) => p.id === 'liveshop')?.appPreviews?.length, 4)
   assert.equal(aiCompanions.length, 2)
   assert.equal(liveshopCase.appEvidence.length, 7)
   assert.equal(liveshopCase.crossEndFlow.length, 4)
@@ -77,10 +77,11 @@ test('unified career positioning, factual history and zero internal leakage', ()
       articles,
       openSource,
       courierCase,
+      lowcodeCase,
       analyticsCase,
       liveshopCase,
     }),
-    /fly[- ]?weave/i,
+    /fly[- ]?weave|速众|suconnect|su-ui/i,
   )
 })
 
@@ -155,6 +156,7 @@ test('main site production dist contains metadata, evidence assets, version.json
     '/projects/nova-wing/recovery.webp',
     '/evidence/courier/admin-orders.webp',
     '/evidence/courier/mini-booking.webp',
+    '/evidence/portfolio/lowcode-workbench.jpg',
     '/evidence/portfolio/sdk-monitor.jpg',
     '/evidence/portfolio/ebi-user-query.jpg',
     '/evidence/portfolio/liveshop-orders.jpg',

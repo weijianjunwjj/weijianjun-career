@@ -3,6 +3,7 @@
   "courier": "/projects/courier",
   "courierMini": "/projects/courier/mini",
   "courierAdmin": "/projects/courier/admin",
+  "lowcode": "/projects/lowcode",
   "analytics": "/projects/analytics",
   "liveshop": "/projects/liveshop"
 }

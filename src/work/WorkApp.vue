@@ -5,6 +5,7 @@ import ResumeLink from '../components/ResumeLink.vue'
 import type { LightboxItem } from '../components/MediaLightbox.vue'
 import WorkNav from './components/WorkNav.vue'
 import CourierCaseSection from './components/CourierCaseSection.vue'
+import LowcodeCaseSection from './components/LowcodeCaseSection.vue'
 import AnalyticsCaseSection from './components/AnalyticsCaseSection.vue'
 import LiveshopCaseSection from './components/LiveshopCaseSection.vue'
 import { links } from '../data/links.ts'
@@ -41,6 +42,8 @@ function syncFromLocation() {
   } else if (path === '/projects/courier') {
     activeCase.value = 'courier'
     courierSubView.value = 'overview'
+  } else if (path === '/projects/lowcode') {
+    activeCase.value = 'lowcode'
   } else if (path === '/projects/analytics') {
     activeCase.value = 'analytics'
   } else if (path === '/projects/liveshop') {
@@ -119,9 +122,18 @@ const dockCards: {
     proof: '5 张真机截图 · 4 张后台截图 · 2 段录屏 · 小程序码',
   },
   {
+    id: 'lowcode',
+    path: '/projects/lowcode/',
+    index: '02',
+    tier: '平台工程 · 物料与数据层',
+    title: '企业级低代码平台（独立沙盒）',
+    summary: 'Vue 3 低代码引擎物料三件套 · 图表统一数据源与 O(n) 多维透视 · CRUD 异步轮询与字段权限',
+    proof: '四层架构落点图 · 3 组可交互引擎演练台 · 4 项工程取舍',
+  },
+  {
     id: 'analytics',
     path: '/projects/analytics/',
-    index: '02',
+    index: '03',
     tier: '真实企业案例',
     title: '友谊时光 · EBI 与 SDK 监控',
     summary: 'Vue 2.6 Options API 页面级 Store 治理 · 7 模块局部状态 · Webpack 5 缓存 300s → 30s',
@@ -130,7 +142,7 @@ const dockCards: {
   {
     id: 'liveshop',
     path: '/projects/liveshop/',
-    index: '03',
+    index: '04',
     tier: '双端电商案例',
     title: 'LiveShop 海外社交电商',
     summary: 'uni-app 海外社区/电商/订单 App + Vue 3 运营后台双端联动 · X OAuth 与 PayPal/Google Play 接入',
@@ -162,7 +174,7 @@ const dockCards: {
                 真实业务 · 可验证工程证据工作台
               </h1>
               <p class="work-hero-lead">
-                无需在几十个静态链接间反复跳转：这里按业务复杂度与真实证据密度，集中呈现中邮通快递体系、友谊时光数据平台与 LiveShop 后台的架构决策、脱敏界面、真机录屏与交互式状态机。
+                无需在几十个静态链接间反复跳转：这里按业务复杂度与真实证据密度，集中呈现中邮通快递体系、企业级低代码平台、友谊时光数据平台与 LiveShop 后台的架构决策、脱敏界面、真机录屏与交互式沙盒。
               </p>
 
               <div class="work-hero-actions">
@@ -183,8 +195,8 @@ const dockCards: {
             </div>
           </div>
 
-          <!-- Instant 3-Case Dock (Zero Click Tax) -->
-          <div class="case-dock" aria-label="三大真实工程案例快速切换">
+          <!-- Instant 4-Case Dock (Zero Click Tax) -->
+          <div class="case-dock" aria-label="四大真实工程案例快速切换">
             <button
               v-for="card in dockCards"
               :key="card.id"
@@ -204,13 +216,13 @@ const dockCards: {
           </div>
 
           <div v-if="activeCase !== 'all'" class="filter-bar">
-            <span class="filter-hint">当前聚焦单个案例视图，可随时一键回到三案例全景浏览。</span>
+            <span class="filter-hint">当前聚焦单个案例视图，可随时一键回到四案例全景浏览。</span>
             <button
               type="button"
               class="btn btn-ghost btn-sm"
               @click="navigateTo({ caseId: 'all', path: '/' })"
             >
-              查看全部 3 个案例全景
+              查看全部 4 个案例全景
             </button>
           </div>
         </div>
@@ -223,6 +235,8 @@ const dockCards: {
         @change-sub-view="handleCourierSubView"
         @open-media="handleOpenMedia"
       />
+
+      <LowcodeCaseSection v-if="activeCase === 'all' || activeCase === 'lowcode'" />
 
       <AnalyticsCaseSection
         v-if="activeCase === 'all' || activeCase === 'analytics'"
@@ -383,10 +397,10 @@ const dockCards: {
   color: var(--ink-muted);
 }
 
-/* 3-Case Dock */
+/* 4-Case Dock */
 .case-dock {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 

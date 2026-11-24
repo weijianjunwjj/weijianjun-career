@@ -36,7 +36,7 @@ export const evolutionStages: EvolutionStage[] = [
     company: '南京递吾件融网络科技',
     title: '把真实交易、异步支付与多系统联调做成确定流程。',
     summary:
-      '主导中邮通/逍遥邮寄件小程序与运营后台；主导 LiveShop 海外社交电商 App 社区/电商/登录/支付模块与后台协作；参与速众低代码平台图表数据层与公司 AI 对话应用维护。',
+      '主导中邮通/逍遥邮寄件小程序与运营后台；主导 LiveShop 海外社交电商 App 社区/电商/登录/支付模块与后台协作；参与企业级低代码平台图表数据层、CRUD 轮询与企业 AI 对话应用维护。',
     breakthrough:
       '设计微信支付分异步出单 WebSocket + 3s 阶梯轮询兜底状态机；修复企业 AI 对话“重新生成”累计流式文本误作增量导致的回答重复。',
     stack: ['微信原生小程序', '微信支付分', 'WebSocket', 'Vue 3 / Pinia', 'Naive UI'],
