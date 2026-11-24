@@ -10,6 +10,7 @@ export const links = {
   workLiveshop: workUrl('projects/liveshop/'),
   github: 'https://github.com/weijianjunwjj',
   repositories: 'https://github.com/weijianjunwjj?tab=repositories',
+  novaRepo: 'https://github.com/weijianjunwjj/nova-wing',
   novaShowcase: 'https://github.com/weijianjunwjj/nova-wing-showcase',
   novaProject: 'https://weijianjunwjj.github.io/nova-wing-showcase/',
   novaDemo: 'https://weijianjunwjj.github.io/nova-wing-showcase/#demo',

@@ -79,6 +79,16 @@ function openDemoVideo(event: MouseEvent) {
 
           <div class="nova-links">
             <a
+              :href="novaWing.links.repo"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-primary btn-sm"
+            >
+              <AppIcon name="github" :size="14" />
+              <span>GitHub 源码</span>
+              <AppIcon name="arrow-up-right" :size="13" />
+            </a>
+            <a
               :href="novaWing.links.project"
               target="_blank"
               rel="noopener noreferrer"
@@ -172,6 +182,20 @@ function openDemoVideo(event: MouseEvent) {
             <div class="evidence-caption-box">
               <p class="evidence-caption-title">{{ activeEvidence.title }}</p>
               <p class="evidence-caption-text">{{ activeEvidence.text }}</p>
+            </div>
+
+            <div class="evidence-repo-bar">
+              <span class="mono evidence-repo-label">GITHUB 源码</span>
+              <a
+                :href="novaWing.links.repo"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="evidence-repo-link"
+              >
+                <AppIcon name="github" :size="14" />
+                <span class="mono">{{ novaWing.links.repo }}</span>
+                <AppIcon name="arrow-up-right" :size="13" />
+              </a>
             </div>
           </div>
 
@@ -450,6 +474,40 @@ function openDemoVideo(event: MouseEvent) {
   margin: 0;
   font-size: 13px;
   color: var(--ink-secondary);
+}
+
+.evidence-repo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(56, 232, 255, 0.24);
+  background: rgba(6, 11, 24, 0.82);
+}
+
+.evidence-repo-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.evidence-repo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--cyan);
+  font-size: 12.5px;
+  text-decoration: none;
+  word-break: break-all;
+  transition: color 0.2s var(--ease-out);
+}
+
+.evidence-repo-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
 }
 
 .nova-demo-box {

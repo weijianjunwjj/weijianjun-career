@@ -5,6 +5,8 @@ export interface HeroStageItem {
   id: string
   tabLabel: string
   badge: string
+  desktopLabel?: string
+  secondaryTitle?: string
   title: string
   subtitle: string
   provenance: string
@@ -17,6 +19,13 @@ export interface HeroStageItem {
   actionLabel: string
   actionHref: string
   isExternal: boolean
+}
+
+export interface GatewayAppPreview {
+  label: string
+  src: string
+  alt: string
+  provenance: string
 }
 
 export interface GatewayProject {
@@ -34,6 +43,7 @@ export interface GatewayProject {
   primaryAlt: string
   secondaryImage?: string
   secondaryAlt?: string
+  appPreviews?: GatewayAppPreview[]
   provenance: string
   workHref: string
   subLinks?: { label: string; href: string }[]
@@ -44,6 +54,8 @@ export const heroStageItems: HeroStageItem[] = [
     id: 'courier',
     tabLabel: '中邮通 · 逍遥邮',
     badge: '核心业务 · 双端证据',
+    desktopLabel: '逍遥邮管理后台 · Vue 3 / Naive UI',
+    secondaryTitle: '逍遥邮微信小程序 · 移动端真机视图',
     title: '逍遥邮微信小程序 × 运营管理后台',
     subtitle: '微信支付分先寄后付 + WebSocket / 阶梯轮询异步出单 + CSV 双账单差异对账',
     provenance: '脱敏真机截图 & 原始历史后台（Mock 样本）',
@@ -74,16 +86,20 @@ export const heroStageItems: HeroStageItem[] = [
   },
   {
     id: 'liveshop',
-    tabLabel: 'LiveShop 后台',
-    badge: '海外社交电商 · 权限与联调',
-    title: 'LiveShop 后台管理与跨端业务集成',
-    subtitle: 'Vue 3 + Pinia 动态菜单路由注入 + 109 个唯一 API 路径覆测 + X OAuth 回跳',
-    provenance: '原始历史后台界面（本地 SQLite 合成样本）',
+    tabLabel: 'LiveShop 双端',
+    badge: '海外社交电商 · App 与后台',
+    desktopLabel: 'LiveShop 运营后台 · Vue 3 / Naive UI',
+    secondaryTitle: 'LiveShop uni-app 客户端 · 首页发现流（H5 Mock）',
+    title: 'LiveShop 海外社交电商 App × 运营管理后台',
+    subtitle: 'uni-app（Vue 3 + TS）7 屏核心界面 + Vue 3 / Pinia 动态路由 + 109 个唯一 API 路径覆测',
+    provenance: '原始历史源码运行 · 后台本地 SQLite & App 本地 H5 Mock',
     image: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
-    layout: 'desktop',
+    secondaryImage: publicAsset('evidence/liveshop/app-home.webp'),
+    layout: 'dual',
     alt: 'LiveShop 海外社交电商管理后台商品订单页，展示金币与积分组合支付、订单状态与侧边业务导航',
-    highlight: '涵盖商品、拼团、众筹、充值订单与角色权限控制；App 侧完成系统浏览器 X OAuth 与双端定位设置跳转。',
-    actionLabel: '查看 LiveShop 后台与接口覆盖证据',
+    secondaryAlt: 'LiveShop uni-app 客户端首页发现流与创作者推荐界面（本地 H5 Mock 演示数据）',
+    highlight: 'App 侧覆盖首页、个人主页、登录、社区、商城/详情与五态订单及 X OAuth / PayPal；后台覆测 109 个唯一接口。',
+    actionLabel: '查看 LiveShop 7 屏 App 与后台证据',
     actionHref: links.workLiveshop,
     isExternal: true,
   },
@@ -161,19 +177,47 @@ export const gatewayProjects: GatewayProject[] = [
     tier: '补充案例',
     company: '南京递吾件融网络科技有限公司',
     period: '2023.08 — 2025.05',
-    title: 'LiveShop 海外社交电商管理后台与 App',
+    title: 'LiveShop 海外社交电商 App 与管理后台',
     summary:
-      '海外社交电商全链路协作项目：后台覆盖商品/拼团/众筹/充值订单、运营活动、社区与系统权限；App 侧主导社区、电商、登录与支付模块，并落地系统浏览器 X OAuth 与跨平台定位权限兜底。',
-    keyProof: '历史后台商品订单运行截图 + TypeScript AST 109 个唯一接口盘点 + 本地 SQLite 联调闭环',
+      '海外社交电商双端协作项目：App 侧基于 uni-app（Vue 3 + TS）主导首页、个人主页、登录、社区、商城与订单及海外支付/OAuth；后台覆盖商品/拼团/众筹/充值订单、运营活动与 RBAC 权限。',
+    keyProof: '7 屏 uni-app 客户端 H5 Mock 演示 + 历史后台订单运行截图 + TypeScript AST 109 路径盘点',
     metricsOrDecision: [
-      '权限与路由边界：Vue 3 + Pinia 登录后按菜单权限动态注入路由，前后端接口鉴权一致约束',
-      '109 路径接口覆盖：AST 遍历 src/api/ 核验请求契约，覆盖发货、退款、规格与权限变更持久化',
+      'App 跨端业务闭环：uni-app（Vue 3 + TS）交付首页发现、个人主页、登录、社区、商城/SKU 详情与五态订单',
       '原生系统边界：X OAuth 走系统浏览器回跳 App 在 onShow 解析参数；定位永久拒绝按 iOS/Android 跳转系统设置',
+      '后台权限与 109 路径覆测：Vue 3 + Pinia 登录后按菜单动态注入路由，AST 盘点并验证 109 个唯一接口契约',
     ],
-    stack: ['Vue 3', 'TypeScript', 'Pinia', 'Naive UI', 'uni-app', 'OAuth / 支付集成'],
+    stack: ['uni-app (Vue 3)', 'TypeScript', 'Pinia', 'Naive UI', 'OAuth / PayPal / IAP'],
     primaryImage: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
     primaryAlt: 'LiveShop 后台管理商品订单与金币积分结算界面（本地合成样本）',
-    provenance: '原始历史后台界面（本地 SQLite 合成演示样本）',
+    secondaryImage: publicAsset('evidence/liveshop/app-home.webp'),
+    secondaryAlt: 'LiveShop uni-app 客户端首页发现流与创作者推荐界面（本地 H5 Mock 演示数据）',
+    appPreviews: [
+      {
+        label: '首页发现',
+        src: publicAsset('evidence/liveshop/app-home.webp'),
+        alt: 'LiveShop App 首页发现流与创作者推荐界面（本地 H5 Mock 演示）',
+        provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      },
+      {
+        label: '个人主页',
+        src: publicAsset('evidence/liveshop/app-person.webp'),
+        alt: 'LiveShop App 创作者个人主页与相册/动态双栏界面（本地 H5 Mock 演示）',
+        provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      },
+      {
+        label: '商城商品',
+        src: publicAsset('evidence/liveshop/app-shop.webp'),
+        alt: 'LiveShop App 商城类目与双列商品列表界面（本地 H5 Mock 演示）',
+        provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      },
+      {
+        label: '五态订单',
+        src: publicAsset('evidence/liveshop/app-order.webp'),
+        alt: 'LiveShop App 五态订单列表与待支付倒计时界面（本地 H5 Mock 演示）',
+        provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
+      },
+    ],
+    provenance: '原始历史源码运行 · 后台本地 SQLite 样本 & App 本地 H5 Mock 演示',
     workHref: links.workLiveshop,
   },
 ]
@@ -274,6 +318,7 @@ export const novaWing = {
     originalDuration: '13:01.75',
   },
   links: {
+    repo: links.novaRepo,
     showcase: links.novaShowcase,
     project: links.novaProject,
     demo: links.novaDemo,

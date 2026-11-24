@@ -32,7 +32,7 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
     list.push({
       kind: 'image',
       src: item.secondaryImage,
-      title: `${item.title} · 移动端真机视图`,
+      title: item.secondaryTitle || `${item.title} · 移动端视图`,
       caption: item.subtitle,
       provenance: item.provenance,
       alt: item.secondaryAlt || item.alt,
@@ -116,12 +116,12 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
             <div class="optical-frame dual-desktop">
               <div class="optical-frame-bar">
                 <span class="optical-dots"><span /><span /><span /></span>
-                <span class="optical-bar-label">逍遥邮管理后台 · Vue 3 / Naive UI</span>
+                <span class="optical-bar-label">{{ activeItem.desktopLabel || activeItem.badge }}</span>
               </div>
               <button
                 type="button"
                 class="optical-media-btn"
-                aria-label="放大查看逍遥邮运营后台真实截图"
+                :aria-label="`放大查看 ${activeItem.title} 桌面端截图`"
                 @click="openStageLightbox($event, false)"
               >
                 <img :src="activeItem.image" :alt="activeItem.alt" width="1320" height="820" />
@@ -136,7 +136,7 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
               <button
                 type="button"
                 class="phone-bezel-screen"
-                aria-label="放大查看逍遥邮微信小程序真机截图"
+                :aria-label="`放大查看 ${activeItem.secondaryTitle || activeItem.title}`"
                 @click="openStageLightbox($event, true)"
               >
                 <img
