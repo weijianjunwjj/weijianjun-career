@@ -111,6 +111,7 @@ export function buildFlagCookie(
     protocol?: string
     persistent: boolean
     clear?: boolean
+    hostOnly?: boolean
   },
 ): string {
   const root = usesRootDomainCookie(options.hostname)
@@ -121,7 +122,7 @@ export function buildFlagCookie(
   } else if (options.persistent) {
     parts.push(`Max-Age=${OWNER_COOKIE_MAX_AGE}`)
   }
-  if (root) parts.push(`Domain=${ROOT_COOKIE_DOMAIN}`)
+  if (root && !options.hostOnly) parts.push(`Domain=${ROOT_COOKIE_DOMAIN}`)
   if (secure) parts.push('Secure')
   return parts.join('; ')
 }
@@ -142,6 +143,17 @@ export function setOwnerExcluded(io: PersistIo, excluded: boolean): void {
       clear: !excluded,
     }),
   )
+  if (!excluded && usesRootDomainCookie(io.hostname)) {
+    io.setCookie(
+      buildFlagCookie(OWNER_COOKIE, {
+        hostname: io.hostname,
+        protocol: io.protocol,
+        persistent: true,
+        clear: true,
+        hostOnly: true,
+      }),
+    )
+  }
   writeStorageFlag(io.localStorage, OWNER_STORAGE_KEY, excluded)
 }
 

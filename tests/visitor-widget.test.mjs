@@ -135,7 +135,8 @@ function createHost(init = {}) {
         const parsed = new URL(url, `${location.protocol}//${location.hostname}${location.pathname}`)
         location.pathname = parsed.pathname
         location.search = parsed.search
-        location.hash = parsed.hash
+        // 标准浏览器：replaceState 同步 location.hash；无 hash 时为 ''
+        location.hash = parsed.hash || ''
         location.href = parsed.toString()
       },
     },
@@ -550,4 +551,109 @@ test('static html never hardcodes remote tawk scripts', async () => {
     assert.doesNotMatch(html, /src="https?:\/\//)
     assert.doesNotMatch(html, /embed\.tawk\.to/)
   }
+})
+
+function findAction(host, action) {
+  return host.registry.nodes.find((node) => node.getAttribute?.('data-action') === action) || null
+}
+
+function statusBarText(host) {
+  const bar = host.document.getElementById('wjj-owner-status')
+  if (!bar) return ''
+  return bar.children.map((child) => child.innerHTML || child.textContent || '').join('\n')
+}
+
+test('replaceState without writing location.hash still clears owner hash', () => {
+  resetVisitorWidgetForTests()
+  const host = createHost({ location: { hostname: 'weijianjun.me', hash: '#owner-exclude', protocol: 'https:' } })
+  mountWidget(host)
+  assert.equal(host.location.hash, '')
+  assert.doesNotMatch(host.location.href, /#$/)
+})
+
+test('enabling exclude after inject cancels timer, hides bubble and widget, and asks to refresh', () => {
+  resetVisitorWidgetForTests()
+  let hideCalls = 0
+  const host = createHost({
+    Tawk_API: {
+      hideWidget() {
+        hideCalls += 1
+      },
+    },
+  })
+  const { result, timers } = mountWidget(host)
+  assert.equal(result.injected, true)
+  notifyVisitorRouteChange({ site: 'main', path: '/#courier', projectId: 'courier' })
+  host.Tawk_API.onStatusChange('offline')
+  assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
+  timers.flush(4000)
+  assert.ok(host.document.getElementById('wjj-welcome-bubble'))
+
+  host.location.hash = '#owner-exclude'
+  host.emit('window', 'hashchange', { type: 'hashchange' })
+
+  assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
+  assert.equal(getVisitorWidgetDebugState().pendingEvent, null)
+  assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
+  assert.equal(hideCalls, 1)
+  assert.match(statusBarText(host), /请刷新一次页面以彻底断开连接/)
+  assert.equal(host.location.hash, '')
+})
+
+test('toggle exclude after inject also stops live surface; uninjected exclude does not ask to refresh', () => {
+  resetVisitorWidgetForTests()
+  let hideCalls = 0
+  const injectedHost = createHost({
+    Tawk_API: {
+      hideWidget() {
+        hideCalls += 1
+      },
+    },
+  })
+  const injectedMount = mountWidget(injectedHost)
+  assert.equal(injectedMount.result.injected, true)
+  injectedHost.Tawk_API.onStatusChange('offline')
+  assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
+
+  injectedHost.location.hash = '#owner-status'
+  injectedHost.emit('window', 'hashchange', { type: 'hashchange' })
+  findAction(injectedHost, 'toggle').click()
+  assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
+  assert.equal(getVisitorWidgetDebugState().pendingEvent, null)
+  assert.equal(hideCalls, 1)
+  assert.match(statusBarText(injectedHost), /请刷新一次页面以彻底断开连接/)
+
+  resetVisitorWidgetForTests()
+  const skipped = createHost({
+    location: { hostname: '127.0.0.1', protocol: 'http:', port: '5173', hash: '', search: '' },
+  })
+  const skippedMount = mountWidget(skipped)
+  assert.equal(skippedMount.result.injected, false)
+  skipped.location.hash = '#owner-status'
+  skipped.emit('window', 'hashchange', { type: 'hashchange' })
+  findAction(skipped, 'toggle').click()
+  assert.match(statusBarText(skipped), /站长排除已开启/)
+  assert.doesNotMatch(statusBarText(skipped), /请刷新/)
+})
+
+test('clearing owner exclude on production domain also drops host-only cookie', () => {
+  const writes = []
+  const localStorage = memoryStorage()
+  const io = {
+    hostname: 'weijianjun.me',
+    protocol: 'https:',
+    getCookie: () => '',
+    setCookie: (value) => {
+      writes.push(value)
+    },
+    localStorage,
+  }
+
+  setOwnerExcluded(io, false)
+  assert.equal(writes.length, 2)
+  assert.match(writes[0], /Max-Age=0/)
+  assert.match(writes[0], /Domain=\.weijianjun\.me/)
+  assert.match(writes[1], /Max-Age=0/)
+  assert.doesNotMatch(writes[1], /Domain=/)
+  assert.equal(localStorage.getItem(OWNER_STORAGE_KEY), null)
 })

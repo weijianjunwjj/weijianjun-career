@@ -121,6 +121,7 @@ export type TawkApi = {
   onChatMessageAgent?: (...args: unknown[]) => void
   addEvent?: (name: string, meta?: Record<string, string>, cb?: () => void) => void
   maximize?: () => void
+  hideWidget?: () => void
   getStatus?: () => string
 }
 
@@ -270,15 +271,32 @@ function removeEl(host: VisitorHost, id: string) {
   }
 }
 
+function stopLiveVisitorSurface(host: VisitorHost) {
+  cancelFallbackTimer()
+  hideWelcomeBubble(host)
+  pendingEvent = null
+  if (!injected) return
+  try {
+    host.Tawk_API?.hideWidget?.()
+  } catch {
+    // tawk 未就绪或 hideWidget 抛错时静默
+  }
+}
+
+function applyOwnerExclusion(host: VisitorHost, excluded: boolean) {
+  setOwnerExcluded(ioFromHost(host), excluded)
+  if (excluded) stopLiveVisitorSurface(host)
+}
+
 function handleOwnerHash(host: VisitorHost): boolean {
   const action = parseOwnerHash(host.location.hash)
   if (!action) return false
-  const io = ioFromHost(host)
-  if (action === 'exclude') setOwnerExcluded(io, true)
-  if (action === 'include') setOwnerExcluded(io, false)
+  if (action === 'exclude') applyOwnerExclusion(host, true)
+  if (action === 'include') applyOwnerExclusion(host, false)
   const next = stripHashFromUrl(host.location.pathname, host.location.search)
+  // 真实浏览器 replaceState 会同步清空 location.hash；不要再写 location.hash = ''，
+  // 否则会新增一条带尾部 # 的历史记录并触发多余 hashchange。
   host.history.replaceState(host.history.state ?? null, '', next)
-  host.location.hash = ''
   showOwnerStatusBar(host)
   return true
 }
@@ -293,9 +311,14 @@ function showOwnerStatusBar(host: VisitorHost) {
   bar.setAttribute('role', 'status')
 
   const status = host.document.createElement('p')
-  status.innerHTML = excluded
-    ? '<strong>站长排除已开启</strong> · tawk.to 不会加载，也不会产生访问记录。'
-    : '<strong>站长排除未开启</strong> · 当前浏览器会按访客计入 tawk.to。'
+  if (excluded && injected) {
+    status.innerHTML =
+      '<strong>站长排除已开启</strong> · tawk.to 不会加载，也不会产生访问记录。当前页此前已加载组件，请刷新一次页面以彻底断开连接。'
+  } else if (excluded) {
+    status.innerHTML = '<strong>站长排除已开启</strong> · tawk.to 不会加载，也不会产生访问记录。'
+  } else {
+    status.innerHTML = '<strong>站长排除未开启</strong> · 当前浏览器会按访客计入 tawk.to。'
+  }
   bar.appendChild(status)
 
   const hint = host.document.createElement('p')
@@ -311,7 +334,7 @@ function showOwnerStatusBar(host: VisitorHost) {
   toggle.setAttribute('data-action', 'toggle')
   toggle.textContent = excluded ? '解除排除' : '开启排除'
   toggle.addEventListener('click', () => {
-    setOwnerExcluded(ioFromHost(host), !isOwnerExcluded(ioFromHost(host)))
+    applyOwnerExclusion(host, !isOwnerExcluded(ioFromHost(host)))
     showOwnerStatusBar(host)
   })
   row.appendChild(toggle)
