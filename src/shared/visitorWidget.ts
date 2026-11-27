@@ -174,12 +174,16 @@ const WIDGET_CSS = `
   color: #6f84a8;
 }
 #wjj-contact-card img[data-field="wechat-qr"] {
-  width: 168px;
-  height: 168px;
-  object-fit: cover;
+  display: block;
+  width: 184px;
+  height: auto;
+  max-height: 240px;
+  object-fit: contain;
+  padding: 6px;
+  margin-bottom: 8px;
+  background: #ffffff;
   border-radius: 12px;
   border: 1px solid rgba(148, 179, 255, 0.18);
-  background: rgba(8, 14, 29, 0.8);
 }
 #wjj-contact-card [data-field="wechat-placeholder"] {
   margin: 0 0 8px;
@@ -434,8 +438,8 @@ function showContactCard(host: VisitorHost, ctx?: ProjectCtx) {
   const qr = host.document.createElement('img')
   qr.setAttribute('data-field', 'wechat-qr')
   qr.setAttribute('alt', '魏建军个人微信二维码')
-  qr.setAttribute('width', '168')
-  qr.setAttribute('height', '168')
+  qr.setAttribute('width', '184')
+  qr.setAttribute('height', '234')
   qr.src = publicAsset('contact/wechat-qr.jpg')
 
   const placeholder = host.document.createElement('p')
@@ -661,9 +665,7 @@ function showWelcomeBubble(host: VisitorHost) {
   chat.textContent = '邮箱 / 微信直联'
   chat.addEventListener('click', () => {
     hideWelcomeBubble(host, { persistLauncher: false })
-    const ctx = currentCtx(host)
-    showContactCard(host, ctx)
-    adapter.openChat(ctx)
+    adapter.openChat(currentCtx(host))
   })
   row.appendChild(chat)
   bubble.appendChild(row)

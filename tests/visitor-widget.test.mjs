@@ -687,6 +687,30 @@ test('SPA trackPageview skips the landing duplicate and de-dupes the same path',
   assert.ok(!JSON.stringify(getVisitorWidgetDebugState().lastEvent).includes('@'))
 })
 
+test('wechat qr css uses contain not cover, and img keeps 888:1131 ratio', () => {
+  resetVisitorWidgetForTests()
+  const host = createHost({
+    location: {
+      hostname: '127.0.0.1',
+      protocol: 'http:',
+      port: '4173',
+      search: '?visitor-preview=1',
+    },
+  })
+  const { timers } = mountWidget(host)
+  timers.flush(4000)
+  findAction(host, 'chat').click()
+  const style = host.document.getElementById('wjj-visitor-widget-style')
+  assert.ok(style)
+  assert.match(style.textContent, /img\[data-field="wechat-qr"\][\s\S]*object-fit:\s*contain/)
+  assert.doesNotMatch(style.textContent, /object-fit:\s*cover/)
+  assert.match(style.textContent, /width:\s*184px/)
+  assert.match(style.textContent, /height:\s*auto/)
+  const qr = findField(host, 'wechat-qr')
+  assert.equal(qr.getAttribute('width'), '184')
+  assert.equal(qr.getAttribute('height'), '234')
+})
+
 test('openChat opens contact card with mailto, copy, and wechat onerror fallback', async () => {
   resetVisitorWidgetForTests()
   const host = createHost({
