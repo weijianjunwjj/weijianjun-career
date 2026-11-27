@@ -13,23 +13,26 @@ import {
   hasPreviewQuery,
   isLoopbackHost,
   isOwnerExcluded,
-  isValidPop800JobNo,
-  isValidPop800Ukey,
+  isValidBaiduHmId,
   isWelcomeShown,
   markWelcomeShown,
   parseOwnerHash,
+  resolveBaiduHmId,
   resolveMainProjectId,
   resolveWorkProjectId,
   sanitizeVisitorEvent,
   sanitizeVisitorPath,
   setOwnerExcluded,
+  shouldInjectBaiduScript,
 } from '../src/shared/ownerExclude.ts'
-import { POP800_SCRIPT_ATTR, POP800_SLOT_ID, RECEIPT_ID } from '../src/shared/visitorAdapter.ts'
+import { BAIDU_SCRIPT_ATTR, CONTACT_CARD_ID, CONTACT_LAUNCHER_ID } from '../src/shared/visitorAdapter.ts'
 import {
+  buildMailtoHref,
   getVisitorWidgetDebugState,
   notifyVisitorRouteChange,
   resetVisitorWidgetForTests,
   setupVisitorWidget,
+  welcomeCopy,
 } from '../src/shared/visitorWidget.ts'
 
 function memoryStorage() {
@@ -77,6 +80,8 @@ function createEl(tag, registry) {
     async: false,
     charset: '',
     type: '',
+    hidden: false,
+    onerror: null,
     get id() {
       return attrs.id || ''
     },
@@ -87,10 +92,17 @@ function createEl(tag, registry) {
     setAttribute(name, value) {
       attrs[name] = String(value)
       if (name === 'id') el.id = String(value)
+      if (name === 'src') el.src = String(value)
+      if (name === 'href') el.href = String(value)
     },
     getAttribute(name) {
       if (name === 'id') return el.id || null
+      if (name === 'src' && el.src) return el.src
+      if (name === 'href' && el.href) return el.href
       return Object.prototype.hasOwnProperty.call(attrs, name) ? attrs[name] : null
+    },
+    removeAttribute(name) {
+      delete attrs[name]
     },
     appendChild(child) {
       children.push(child)
@@ -104,6 +116,10 @@ function createEl(tag, registry) {
     },
     click() {
       for (const fn of listeners.click || []) fn({ type: 'click' })
+    },
+    triggerError() {
+      el.onerror?.({ type: 'error' })
+      for (const fn of listeners.error || []) fn({ type: 'error' })
     },
     querySelector(sel) {
       const action = /data-action="([^"]+)"/.exec(sel)?.[1]
@@ -130,6 +146,7 @@ function createHost(init = {}) {
     port: '',
     ...init.location,
   }
+  const copied = { value: '' }
   const host = {
     location,
     history: {
@@ -160,8 +177,8 @@ function createHost(init = {}) {
         return registry.byId.get(id) || null
       },
       querySelector(sel) {
-        if (sel.includes(POP800_SCRIPT_ATTR)) {
-          return registry.scripts.find((el) => el.getAttribute(POP800_SCRIPT_ATTR) === '1') || null
+        if (sel.includes(BAIDU_SCRIPT_ATTR)) {
+          return registry.scripts.find((el) => el.getAttribute(BAIDU_SCRIPT_ATTR) === '1') || null
         }
         return null
       },
@@ -185,6 +202,15 @@ function createHost(init = {}) {
     },
     localStorage: init.localStorage || memoryStorage(),
     sessionStorage: init.sessionStorage || memoryStorage(),
+    navigator: {
+      clipboard: {
+        writeText(value) {
+          copied.value = String(value)
+          return Promise.resolve()
+        },
+      },
+    },
+    copied,
     addEventListener(type, fn) {
       windowListeners.push([type, fn])
     },
@@ -192,7 +218,6 @@ function createHost(init = {}) {
       const idx = windowListeners.findIndex((item) => item[0] === type && item[1] === fn)
       if (idx >= 0) windowListeners.splice(idx, 1)
     },
-    POP800: init.POP800,
     registry,
     emit(target, type, event) {
       const list = target === 'window' ? windowListeners : documentListeners
@@ -228,15 +253,17 @@ function createTimers() {
   }
 }
 
-const POP800 = { jobNo: '123456', ukey: 'abcDEF99' }
+const BAIDU_MAIN = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+const BAIDU_WORK = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+const BAIDU = { baiduHmIdMain: BAIDU_MAIN, baiduHmIdWork: BAIDU_WORK }
 
 function mountWidget(host, extra = {}) {
   const timers = extra.timers || createTimers()
   const result = setupVisitorWidget({
     site: extra.site || 'main',
     host,
-    jobNo: extra.jobNo,
-    ukey: extra.ukey,
+    baiduHmIdMain: extra.baiduHmIdMain,
+    baiduHmIdWork: extra.baiduHmIdWork,
     fallbackDelayMs: extra.fallbackDelayMs ?? 4000,
     setTimeoutFn: timers.setTimeout,
     clearTimeoutFn: timers.clearTimeout,
@@ -244,8 +271,24 @@ function mountWidget(host, extra = {}) {
   return { result, timers }
 }
 
+function collectLive(node, out) {
+  if (!node) return
+  out.push(node)
+  for (const child of node.children || []) collectLive(child, out)
+}
+
+function liveNodes(host) {
+  const live = []
+  for (const node of host.registry.byId.values()) collectLive(node, live)
+  return live
+}
+
 function findAction(host, action) {
-  return host.registry.nodes.find((node) => node.getAttribute?.('data-action') === action) || null
+  return liveNodes(host).find((node) => node.getAttribute?.('data-action') === action) || null
+}
+
+function findField(host, name) {
+  return liveNodes(host).find((item) => item.getAttribute?.('data-field') === name) || null
 }
 
 function statusBarText(host) {
@@ -254,13 +297,12 @@ function statusBarText(host) {
   return bar.children.map((child) => child.innerHTML || child.textContent || '').join('\n')
 }
 
-function fieldText(host, name) {
-  const node = host.registry.nodes.find((item) => item.getAttribute?.('data-field') === name)
-  return node?.textContent || ''
-}
-
 function httpScriptSrcs(host) {
   return host.registry.scripts.map((el) => el.src).filter((src) => /^https?:\/\//i.test(src))
+}
+
+function hmtPushes(host) {
+  return Array.isArray(host._hmt) ? host._hmt.filter((item) => Array.isArray(item) && item[0] === '_trackPageview') : []
 }
 
 async function collectFiles(dir) {
@@ -273,20 +315,39 @@ async function collectFiles(dir) {
   return out
 }
 
-test('loopback hosts, preview query and POP800 id validation', () => {
+test('loopback hosts, preview query and Baidu id validation', () => {
   assert.equal(isLoopbackHost('localhost'), true)
   assert.equal(isLoopbackHost('127.0.0.1'), true)
   assert.equal(isLoopbackHost('::1'), true)
   assert.equal(isLoopbackHost('weijianjun.me'), false)
-  assert.equal(isValidPop800JobNo('123456'), true)
-  assert.equal(isValidPop800JobNo('abcDEF123'), false)
-  assert.equal(isValidPop800JobNo(''), false)
-  assert.equal(isValidPop800Ukey('abcDEF99'), true)
-  assert.equal(isValidPop800Ukey('bad/id'), false)
-  assert.equal(isValidPop800Ukey('id with space'), false)
+  assert.equal(isValidBaiduHmId(BAIDU_MAIN), true)
+  assert.equal(isValidBaiduHmId('ABCDEF0123456789abcdef0123456789'), true)
+  assert.equal(isValidBaiduHmId('123456'), false)
+  assert.equal(isValidBaiduHmId('gggggggggggggggggggggggggggggggg'), false)
+  assert.equal(isValidBaiduHmId(''), false)
   assert.equal(hasPreviewQuery('?visitor-preview=1'), true)
   assert.equal(hasPreviewQuery('?tawk-preview=1'), false)
   assert.equal(hasPreviewQuery('?foo=1'), false)
+})
+
+test('baidu id selection prefers work id and falls back to main', () => {
+  assert.equal(resolveBaiduHmId({ site: 'main', mainId: BAIDU_MAIN, workId: BAIDU_WORK }), BAIDU_MAIN)
+  assert.equal(resolveBaiduHmId({ site: 'work', mainId: BAIDU_MAIN, workId: BAIDU_WORK }), BAIDU_WORK)
+  assert.equal(resolveBaiduHmId({ site: 'work', mainId: BAIDU_MAIN, workId: '' }), BAIDU_MAIN)
+  assert.equal(resolveBaiduHmId({ site: 'work', mainId: '', workId: '' }), '')
+  assert.equal(resolveBaiduHmId({ site: 'main', mainId: 'bad', workId: BAIDU_WORK }), '')
+  assert.equal(
+    shouldInjectBaiduScript({ ownerExcluded: false, hostname: 'weijianjun.me', hmId: BAIDU_MAIN }),
+    true,
+  )
+  assert.equal(
+    shouldInjectBaiduScript({ ownerExcluded: true, hostname: 'weijianjun.me', hmId: BAIDU_MAIN }),
+    false,
+  )
+  assert.equal(
+    shouldInjectBaiduScript({ ownerExcluded: false, hostname: 'localhost', hmId: BAIDU_MAIN }),
+    false,
+  )
 })
 
 test('owner exclude dual persistence on production domain', () => {
@@ -345,14 +406,12 @@ test('owner hash parsing and unmarked visitors pass through', () => {
   assert.equal(isOwnerExcluded(io), false)
 })
 
-test('adapter decision: owner, loopback, pop800, preview, none', () => {
+test('adapter decision: owner, loopback, baidu, preview, none', () => {
   assert.deepEqual(
     decideVisitorAdapter({
       ownerExcluded: true,
       hostname: 'weijianjun.me',
       search: '',
-      jobNo: POP800.jobNo,
-      ukey: POP800.ukey,
     }),
     { adapter: 'none', reason: 'owner' },
   )
@@ -361,8 +420,6 @@ test('adapter decision: owner, loopback, pop800, preview, none', () => {
       ownerExcluded: false,
       hostname: 'localhost',
       search: '',
-      jobNo: POP800.jobNo,
-      ukey: POP800.ukey,
     }),
     { adapter: 'none', reason: 'loopback' },
   )
@@ -371,75 +428,84 @@ test('adapter decision: owner, loopback, pop800, preview, none', () => {
       ownerExcluded: false,
       hostname: 'localhost',
       search: '?visitor-preview=1',
-      jobNo: POP800.jobNo,
-      ukey: POP800.ukey,
     }).adapter,
-    'pop800',
+    'preview',
   )
   assert.equal(
     decideVisitorAdapter({
       ownerExcluded: false,
-      hostname: 'localhost',
-      search: '?visitor-preview=1',
-      jobNo: '',
-      ukey: '',
+      hostname: 'weijianjun.me',
+      search: '',
     }).adapter,
-    'preview',
+    'baidu',
+  )
+  assert.equal(
+    decideVisitorAdapter({
+      ownerExcluded: false,
+      hostname: 'work.weijianjun.me',
+      search: '',
+    }).adapter,
+    'baidu',
   )
   assert.deepEqual(
     decideVisitorAdapter({
       ownerExcluded: false,
-      hostname: 'weijianjun.me',
+      hostname: 'example.com',
       search: '',
-      jobNo: 'bad/id',
-      ukey: 'def',
     }),
     { adapter: 'none', reason: 'none' },
-  )
-  assert.equal(
-    decideVisitorAdapter({
-      ownerExcluded: false,
-      hostname: 'weijianjun.me',
-      search: '',
-      jobNo: POP800.jobNo,
-      ukey: POP800.ukey,
-    }).adapter,
-    'pop800',
   )
 })
 
 test('owner hash writes flags, strips url and never mounts a channel', () => {
   resetVisitorWidgetForTests()
   const host = createHost({ location: { hostname: 'weijianjun.me', hash: '#owner-exclude', protocol: 'https:' } })
-  const { result } = mountWidget(host, POP800)
+  const { result } = mountWidget(host, BAIDU)
   assert.equal(result.mounted, false)
   assert.equal(result.adapter, 'none')
   assert.equal(result.reason, 'owner')
   assert.equal(host.location.hash, '')
   assert.equal(host.registry.scripts.length, 0)
+  assert.equal(host._hmt, undefined)
   assert.equal(host.localStorage.getItem(OWNER_STORAGE_KEY), '1')
   assert.match(host.document.cookie, new RegExp(`${OWNER_COOKIE}=1`))
   assert.ok(host.document.getElementById('wjj-owner-status'))
+  assert.equal(host.document.getElementById(CONTACT_LAUNCHER_ID), null)
 })
 
-test('unmarked production visitor with POP800 mounts adapter without remote script src', () => {
+test('unmarked production visitor injects baidu script once with valid id', () => {
   resetVisitorWidgetForTests()
   const host = createHost()
-  const { result } = mountWidget(host, POP800)
+  const { result } = mountWidget(host, BAIDU)
   assert.equal(result.mounted, true)
-  assert.equal(result.adapter, 'pop800')
-  assert.ok(host.document.getElementById(POP800_SLOT_ID))
-  assert.equal(httpScriptSrcs(host).length, 0)
+  assert.equal(result.adapter, 'baidu')
+  assert.equal(httpScriptSrcs(host).length, 1)
+  assert.equal(httpScriptSrcs(host)[0], `https://hm.baidu.com/hm.js?${BAIDU_MAIN}`)
+  assert.equal(host.registry.scripts[0].getAttribute(BAIDU_SCRIPT_ATTR), '1')
+  assert.ok(Array.isArray(host._hmt))
 })
 
-test('loopback default skips channel; preview query enables local preview', () => {
+test('production visitor without baidu id still mounts contact channel with zero remote scripts', () => {
+  resetVisitorWidgetForTests()
+  const host = createHost()
+  const { result, timers } = mountWidget(host)
+  assert.equal(result.adapter, 'baidu')
+  assert.equal(result.mounted, true)
+  assert.equal(httpScriptSrcs(host).length, 0)
+  assert.equal(host._hmt, undefined)
+  timers.flush(4000)
+  assert.ok(host.document.getElementById('wjj-welcome-bubble'))
+})
+
+test('loopback default skips channel; preview query enables local contact card without hm.js', () => {
   resetVisitorWidgetForTests()
   const blocked = createHost({
     location: { hostname: '127.0.0.1', protocol: 'http:', port: '5173', hash: '', search: '' },
   })
-  assert.equal(mountWidget(blocked, POP800).result.mounted, false)
+  assert.equal(mountWidget(blocked, BAIDU).result.mounted, false)
   assert.equal(blocked.registry.scripts.length, 0)
-  assert.equal(blocked.document.getElementById(POP800_SLOT_ID), null)
+  assert.equal(blocked._hmt, undefined)
+  assert.equal(blocked.document.getElementById(CONTACT_LAUNCHER_ID), null)
 
   resetVisitorWidgetForTests()
   const preview = createHost({
@@ -450,10 +516,11 @@ test('loopback default skips channel; preview query enables local preview', () =
       search: '?visitor-preview=1',
     },
   })
-  const mounted = mountWidget(preview)
+  const mounted = mountWidget(preview, BAIDU)
   assert.equal(mounted.result.adapter, 'preview')
   assert.equal(mounted.result.mounted, true)
   assert.equal(httpScriptSrcs(preview).length, 0)
+  assert.equal(preview._hmt, undefined)
 })
 
 test('welcome shown cookie is session-only and shared on production domain', () => {
@@ -483,12 +550,27 @@ test('welcome shown cookie is session-only and shared on production domain', () 
   assert.equal(sessionStorage.getItem(WELCOME_STORAGE_KEY), '1')
 })
 
+test('welcome copy adapts to project and mailto encodes the Chinese title', () => {
+  assert.equal(
+    welcomeCopy('lowcode'),
+    '正在看「企业级低代码引擎」？有想交流的技术细节或岗位机会，欢迎直接联系我。',
+  )
+  assert.equal(
+    welcomeCopy(),
+    '你好，正在看哪个项目？有想交流的技术细节或岗位机会，欢迎直接联系我。',
+  )
+  const href = buildMailtoHref('lowcode')
+  assert.ok(href.startsWith('mailto:2661043132@qq.com?'))
+  assert.ok(href.includes(encodeURIComponent('交流《企业级低代码引擎》项目 / 岗位沟通')))
+  assert.doesNotMatch(href, /target=/)
+})
+
 test('single-visit welcome: first allowed, refresh/route/cross-site blocked, owner never, no empty bubble', () => {
   resetVisitorWidgetForTests()
   const storage = memoryStorage()
   const sessionStorage = memoryStorage()
   const host = createHost({ localStorage: storage, sessionStorage })
-  const { timers } = mountWidget(host, POP800)
+  const { timers } = mountWidget(host, BAIDU)
   timers.flush(4000)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
   assert.match(host.document.cookie, new RegExp(`${WELCOME_COOKIE}=1`))
@@ -499,9 +581,10 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     localStorage: storage,
     sessionStorage,
   })
-  const again = mountWidget(refreshed, POP800)
+  const again = mountWidget(refreshed, BAIDU)
   again.timers.flush(4000)
   assert.equal(refreshed.document.getElementById('wjj-welcome-bubble'), null)
+  assert.ok(refreshed.document.getElementById(CONTACT_LAUNCHER_ID))
 
   resetVisitorWidgetForTests()
   const workHost = createHost({
@@ -510,7 +593,7 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     sessionStorage,
     location: { hostname: 'work.weijianjun.me', protocol: 'https:', pathname: '/projects/courier' },
   })
-  const workMount = mountWidget(workHost, { site: 'work', ...POP800 })
+  const workMount = mountWidget(workHost, { site: 'work', ...BAIDU })
   workMount.timers.flush(4000)
   assert.equal(workHost.document.getElementById('wjj-welcome-bubble'), null)
 
@@ -528,13 +611,16 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     },
     true,
   )
-  const ownerMount = mountWidget(ownerHost, POP800)
+  const ownerMount = mountWidget(ownerHost, BAIDU)
   assert.equal(ownerMount.result.mounted, false)
   ownerMount.timers.flush(4000)
   assert.equal(ownerHost.document.getElementById('wjj-welcome-bubble'), null)
+  assert.equal(ownerHost.document.getElementById(CONTACT_LAUNCHER_ID), null)
+  assert.equal(ownerHost.registry.scripts.length, 0)
+  assert.equal(ownerHost._hmt, undefined)
 
   resetVisitorWidgetForTests()
-  const empty = createHost()
+  const empty = createHost({ location: { hostname: 'example.com', protocol: 'https:' } })
   const emptyMount = mountWidget(empty)
   assert.equal(emptyMount.result.adapter, 'none')
   emptyMount.timers.flush(4000)
@@ -544,13 +630,13 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
 test('visible page shows welcome once; hidden page does not; returning visible reschedules', () => {
   resetVisitorWidgetForTests()
   const visible = createHost({ visibilityState: 'visible' })
-  const visibleMount = mountWidget(visible, POP800)
+  const visibleMount = mountWidget(visible, BAIDU)
   visibleMount.timers.flush(4000)
   assert.ok(visible.document.getElementById('wjj-welcome-bubble'))
 
   resetVisitorWidgetForTests()
   const hidden = createHost({ visibilityState: 'hidden' })
-  const hiddenMount = mountWidget(hidden, POP800)
+  const hiddenMount = mountWidget(hidden, BAIDU)
   hiddenMount.timers.flush(4000)
   assert.equal(hidden.document.getElementById('wjj-welcome-bubble'), null)
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
@@ -575,33 +661,32 @@ test('anonymous event whitelist drops PII and unknown fields', () => {
   assert.deepEqual(clean, { site: 'work', path: '/projects/courier/mini', project: 'courier' })
   assert.equal(Object.keys(clean).join(','), 'site,path,project')
   assert.equal(sanitizeVisitorPath('/inbox/ada@example.com'), '/')
+  assert.equal(sanitizeVisitorPath('/projects/lowcode/'), '/projects/lowcode')
   assert.equal(sanitizeVisitorEvent({ site: 'main', path: '/#courier', projectId: 'spy' }).project, undefined)
   assert.equal(resolveMainProjectId('#analytics'), 'analytics')
   assert.equal(resolveMainProjectId('#owner-exclude'), undefined)
   assert.equal(resolveWorkProjectId('/projects/lowcode/'), 'lowcode')
 })
 
-test('route notify de-dupes the same path and keeps zero-PII whitelist', () => {
+test('SPA trackPageview skips the landing duplicate and de-dupes the same path', () => {
   resetVisitorWidgetForTests()
-  const host = createHost()
-  mountWidget(host, { site: 'work', ...POP800 })
-  notifyVisitorRouteChange({ site: 'work', path: '/projects/courier', title: 'x', projectId: 'courier' })
-  notifyVisitorRouteChange({ site: 'work', path: '/projects/courier', title: 'y', projectId: 'courier' })
-  assert.deepEqual(getVisitorWidgetDebugState().lastEvent, {
-    site: 'work',
-    path: '/projects/courier',
-    project: 'courier',
+  const host = createHost({
+    location: { hostname: 'work.weijianjun.me', protocol: 'https:', pathname: '/projects/lowcode/' },
   })
+  mountWidget(host, { site: 'work', ...BAIDU })
+  assert.equal(httpScriptSrcs(host)[0], `https://hm.baidu.com/hm.js?${BAIDU_WORK}`)
+  notifyVisitorRouteChange({ site: 'work', path: '/projects/lowcode', title: 'x', projectId: 'lowcode' })
+  assert.equal(hmtPushes(host).length, 0)
+  notifyVisitorRouteChange({ site: 'work', path: '/projects/lowcode', title: 'y', projectId: 'lowcode' })
+  assert.equal(hmtPushes(host).length, 0)
   notifyVisitorRouteChange({ site: 'work', path: '/projects/analytics', projectId: 'analytics', email: 'ada@x.com' })
-  assert.deepEqual(getVisitorWidgetDebugState().lastEvent, {
-    site: 'work',
-    path: '/projects/analytics',
-    project: 'analytics',
-  })
+  assert.deepEqual(hmtPushes(host), [['_trackPageview', '/projects/analytics']])
+  notifyVisitorRouteChange({ site: 'work', path: '/projects/analytics', projectId: 'analytics' })
+  assert.equal(hmtPushes(host).length, 1)
   assert.ok(!JSON.stringify(getVisitorWidgetDebugState().lastEvent).includes('@'))
 })
 
-test('openChat carries anonymous project context into the local receipt', () => {
+test('openChat opens contact card with mailto, copy, and wechat onerror fallback', async () => {
   resetVisitorWidgetForTests()
   const host = createHost({
     location: {
@@ -615,15 +700,43 @@ test('openChat carries anonymous project context into the local receipt', () => 
   const { timers } = mountWidget(host, { site: 'work' })
   notifyVisitorRouteChange({ site: 'work', path: '/projects/lowcode', projectId: 'lowcode' })
   timers.flush(4000)
+  assert.ok(host.document.getElementById('wjj-welcome-bubble'))
+  assert.match(findField(host, 'welcome-copy').textContent, /企业级低代码引擎/)
   findAction(host, 'chat').click()
-  assert.ok(host.document.getElementById(RECEIPT_ID))
-  assert.equal(fieldText(host, 'site'), 'work')
-  assert.equal(fieldText(host, 'path'), '/projects/lowcode')
-  assert.equal(fieldText(host, 'project'), 'lowcode')
-  assert.equal(fieldText(host, 'status'), '回聊通道待接入')
+  assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
+  assert.ok(host.document.getElementById(CONTACT_CARD_ID))
+  const mail = findAction(host, 'mailto')
+  assert.ok(mail.href.startsWith('mailto:2661043132@qq.com?'))
+  assert.ok(mail.href.includes(encodeURIComponent('交流《企业级低代码引擎》项目 / 岗位沟通')))
+  assert.equal(mail.target, undefined)
+  assert.equal(mail.getAttribute('target'), null)
+
+  findAction(host, 'copy-email').click()
+  await Promise.resolve()
+  assert.equal(host.copied.value, '2661043132@qq.com')
+  assert.equal(findAction(host, 'copy-email').textContent, '已复制')
+
+  const qr = findField(host, 'wechat-qr')
+  assert.equal(qr.src, '/contact/wechat-qr.webp')
+  assert.doesNotMatch(qr.src, /mini-qr/)
+  qr.triggerError()
+  assert.equal(qr.hidden, true)
+  const placeholder = findField(host, 'wechat-placeholder')
+  assert.equal(placeholder.hidden, false)
+  assert.match(placeholder.textContent, /18352517082/)
+  findAction(host, 'copy-wechat').click()
+  await Promise.resolve()
+  assert.equal(host.copied.value, '18352517082')
+  assert.equal(findAction(host, 'copy-wechat').textContent, '已复制')
+
+  findAction(host, 'close').click()
+  assert.equal(host.document.getElementById(CONTACT_CARD_ID), null)
+  assert.ok(host.document.getElementById(CONTACT_LAUNCHER_ID))
+  findAction(host, 'launcher').click()
+  assert.ok(host.document.getElementById(CONTACT_CARD_ID))
 })
 
-test('source, env, workflow and built html have zero tawk residue and no static remote scripts', async () => {
+test('source, env, workflow and built html have zero tawk/pop800 residue and no static remote scripts', async () => {
   const root = fileURLToPath(new URL('..', import.meta.url))
   const files = [
     ...(await collectFiles(join(root, 'src'))),
@@ -632,22 +745,28 @@ test('source, env, workflow and built html have zero tawk residue and no static 
     join(root, 'dist', 'index.html'),
     join(root, 'dist-work', 'index.html'),
   ]
-  const joined = []
-  for (const file of files) {
-    const text = await readFile(file, 'utf8')
-    joined.push(text)
+  for (const dir of [join(root, 'dist', 'assets'), join(root, 'dist-work', 'assets')]) {
+    try {
+      files.push(...(await collectFiles(dir)).filter((file) => /\.(js|css|html|map)$/i.test(file)))
+    } catch {
+      // 构建前可能尚无产物；pnpm test 在 build:all 之后跑
+    }
   }
-  const blob = joined.join('\n')
-  assert.doesNotMatch(blob, /tawk\.to/i)
-  assert.doesNotMatch(blob, /embed\.tawk\.to/)
-  assert.doesNotMatch(blob, /VITE_TAWK_/)
-  assert.doesNotMatch(blob, /Tawk_API/)
+  const banned = [/tawk\.to/i, /embed\.tawk\.to/, /VITE_TAWK_/, /Tawk_API/, /pop800/i, /VITE_POP800_/]
+  for (const file of files) {
+    if (!/\.(ts|vue|js|mjs|css|html|yml|example|map)$/i.test(file)) continue
+    const text = await readFile(file, 'utf8')
+    for (const pattern of banned) {
+      assert.doesNotMatch(text, pattern, `${file} still matches ${pattern}`)
+    }
+  }
 
   for (const rel of ['../index.html', '../work/index.html', '../dist/index.html', '../dist-work/index.html']) {
     const html = await readFile(new URL(rel, import.meta.url), 'utf8')
     assert.doesNotMatch(html, /src="https?:\/\//)
     assert.doesNotMatch(html, /embed\.tawk\.to/)
     assert.doesNotMatch(html, /tawk\.to/i)
+    assert.doesNotMatch(html, /pop800/i)
   }
 })
 
@@ -659,16 +778,18 @@ test('replaceState without writing location.hash still clears owner hash', () =>
   assert.doesNotMatch(host.location.href, /#$/)
 })
 
-test('enabling exclude after mount cancels timer, hides bubble, stops adapter, and asks to refresh', () => {
+test('enabling exclude after mount cancels timer, hides surfaces, stops tracking, and asks to refresh', () => {
   resetVisitorWidgetForTests()
   const host = createHost()
-  const { result, timers } = mountWidget(host, POP800)
+  const { result, timers } = mountWidget(host, BAIDU)
   assert.equal(result.mounted, true)
   notifyVisitorRouteChange({ site: 'main', path: '/#courier', projectId: 'courier' })
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
   timers.flush(4000)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
-  assert.ok(host.document.getElementById(POP800_SLOT_ID))
+  findAction(host, 'chat').click()
+  assert.ok(host.document.getElementById(CONTACT_CARD_ID))
+  assert.ok(httpScriptSrcs(host).length >= 1)
 
   host.location.hash = '#owner-exclude'
   host.emit('window', 'hashchange', { type: 'hashchange' })
@@ -676,7 +797,11 @@ test('enabling exclude after mount cancels timer, hides bubble, stops adapter, a
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
   assert.equal(getVisitorWidgetDebugState().lastEvent, null)
   assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
-  assert.equal(host.document.getElementById(POP800_SLOT_ID), null)
+  assert.equal(host.document.getElementById(CONTACT_CARD_ID), null)
+  assert.equal(host.document.getElementById(CONTACT_LAUNCHER_ID), null)
+  const trackedBefore = hmtPushes(host).length
+  notifyVisitorRouteChange({ site: 'main', path: '/#analytics', projectId: 'analytics' })
+  assert.equal(hmtPushes(host).length, trackedBefore)
   assert.match(statusBarText(host), /请刷新一次页面以彻底断开连接/)
   assert.equal(host.location.hash, '')
 })
@@ -684,7 +809,7 @@ test('enabling exclude after mount cancels timer, hides bubble, stops adapter, a
 test('toggle exclude after mount also stops live surface; unmounted exclude does not ask to refresh', () => {
   resetVisitorWidgetForTests()
   const injectedHost = createHost()
-  const injectedMount = mountWidget(injectedHost, POP800)
+  const injectedMount = mountWidget(injectedHost, BAIDU)
   assert.equal(injectedMount.result.mounted, true)
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
 
@@ -693,7 +818,7 @@ test('toggle exclude after mount also stops live surface; unmounted exclude does
   findAction(injectedHost, 'toggle').click()
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
   assert.equal(getVisitorWidgetDebugState().lastEvent, null)
-  assert.equal(injectedHost.document.getElementById(POP800_SLOT_ID), null)
+  assert.equal(injectedHost.document.getElementById(CONTACT_LAUNCHER_ID), null)
   assert.match(statusBarText(injectedHost), /请刷新一次页面以彻底断开连接/)
 
   resetVisitorWidgetForTests()

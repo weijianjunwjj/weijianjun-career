@@ -1,4 +1,4 @@
-/** 可插拔回聊 Adapter。零供应商锁死；本阶段不硬编码真实账号。 */
+/** 可插拔访客 Adapter：百度统计 + 自研联系卡。零海外聊天脚本。 */
 
 import type { ProjectId, VisitorAdapterId } from './ownerExclude.ts'
 
@@ -9,6 +9,7 @@ export type ProjectCtx = {
 }
 
 export type VisitorHostLike = {
+  _hmt?: unknown[]
   document: {
     body?: { appendChild: (node: unknown) => unknown; removeChild: (node: unknown) => unknown }
     documentElement?: { appendChild: (node: unknown) => unknown }
@@ -16,7 +17,6 @@ export type VisitorHostLike = {
     getElementById: (id: string) => AdapterEl | null
     querySelector: (sel: string) => AdapterEl | null
   }
-  POP800?: { openChat?: (ctx?: ProjectCtx) => void }
 }
 
 export type AdapterEl = {
@@ -27,11 +27,15 @@ export type AdapterEl = {
   type?: string
   href?: string
   rel?: string
+  alt?: string
+  target?: string
   textContent?: string
   innerHTML?: string
+  onerror?: ((event?: unknown) => void) | null
   style?: Record<string, string>
   setAttribute: (name: string, value: string) => void
   getAttribute?: (name: string) => string | null
+  removeAttribute?: (name: string) => void
   appendChild: (node: unknown) => unknown
   addEventListener: (type: string, listener: EventListener) => void
 }
@@ -45,17 +49,19 @@ export type VisitorChatAdapter = {
 }
 
 export const RECEIPT_ID = 'wjj-visitor-receipt'
-export const POP800_SLOT_ID = 'wjj-pop800-slot'
-export const POP800_SCRIPT_ATTR = 'data-wjj-pop800'
+export const CONTACT_CARD_ID = 'wjj-contact-card'
+export const CONTACT_LAUNCHER_ID = 'wjj-contact-launcher'
+export const BAIDU_SCRIPT_ATTR = 'data-wjj-baidu'
+export const BAIDU_HM_SRC_PREFIX = 'https://hm.baidu.com/hm.js?'
 
 export type ReceiptHelpers = {
   ensureStyle: () => void
   removeEl: (id: string) => void
-  showReceipt: (ctx: ProjectCtx, status: string) => void
+  showReceipt?: (ctx: ProjectCtx, status: string) => void
+  showContactCard?: (ctx: ProjectCtx) => void
 }
 
-function removeNode(host: VisitorHostLike, id: string) {
-  const node = host.document.getElementById(id)
+function removeNode(host: VisitorHostLike, node: AdapterEl | null) {
   if (!node) return
   try {
     host.document.body?.removeChild(node)
@@ -89,82 +95,87 @@ export function createPreviewAdapter(helpers: ReceiptHelpers): VisitorChatAdapte
     },
     openChat(projectCtx) {
       if (!mounted) return
-      helpers.showReceipt(projectCtx, '回聊通道待接入')
+      helpers.showContactCard?.(projectCtx)
     },
     notifyRouteChange() {},
     stop() {
       mounted = false
       helpers.removeEl(RECEIPT_ID)
+      helpers.removeEl(CONTACT_CARD_ID)
+      helpers.removeEl(CONTACT_LAUNCHER_ID)
     },
   }
 }
 
-export function createPop800Adapter(
+export function createBaiduAdapter(
   host: VisitorHostLike,
-  creds: { jobNo: string; ukey: string },
-  helpers: ReceiptHelpers,
-  options: { allowThirdPartyScript: boolean },
+  options: {
+    hmId: string
+    injectScript: boolean
+    helpers: ReceiptHelpers
+  },
 ): VisitorChatAdapter {
   let mounted = false
-  const routeLog: ProjectCtx[] = []
+  let trackingEnabled = false
+  let landingKey = ''
+  let lastTrackedKey = ''
+  let skippedLanding = false
 
-  function ensureSlot() {
-    if (host.document.getElementById(POP800_SLOT_ID)) return
-    const slot = host.document.createElement('div')
-    slot.id = POP800_SLOT_ID
-    slot.setAttribute('data-job-no', creds.jobNo)
-    slot.setAttribute('hidden', 'true')
-    slot.setAttribute('aria-hidden', 'true')
-    const parent = host.document.body || host.document.documentElement
-    parent?.appendChild(slot)
+  function ensureHmtQueue() {
+    if (!Array.isArray(host._hmt)) host._hmt = []
   }
 
-  function ensureScriptPlaceholder() {
-    if (host.document.querySelector(`script[${POP800_SCRIPT_ATTR}="1"]`)) return
+  function ensureScript() {
+    if (!options.injectScript || !options.hmId) return
+    const existing = host.document.querySelector(`script[${BAIDU_SCRIPT_ATTR}="1"]`)
+    if (existing) return
+    ensureHmtQueue()
     const el = host.document.createElement('script')
     el.async = true
-    el.setAttribute(POP800_SCRIPT_ATTR, '1')
-    el.setAttribute('data-job-no', creds.jobNo)
-    el.setAttribute('data-ukey', creds.ukey)
-    // 阶段 B 再写入国内 800.js 的 src。本阶段即使有 ID 也不发外链请求。
-    if (options.allowThirdPartyScript) {
-      el.setAttribute('data-pop800-ready', '1')
-    }
+    el.src = `${BAIDU_HM_SRC_PREFIX}${options.hmId}`
+    el.setAttribute(BAIDU_SCRIPT_ATTR, '1')
     const parent = host.document.body || host.document.documentElement
     parent?.appendChild(el)
   }
 
   return {
-    id: 'pop800',
-    mount() {
+    id: 'baidu',
+    mount(ctx) {
       mounted = true
-      helpers.ensureStyle()
-      ensureSlot()
-      if (options.allowThirdPartyScript) ensureScriptPlaceholder()
+      landingKey = `${ctx.site}:${ctx.path}`
+      lastTrackedKey = landingKey
+      skippedLanding = false
+      options.helpers.ensureStyle()
+      if (options.injectScript) {
+        trackingEnabled = true
+        ensureScript()
+      }
     },
     openChat(projectCtx) {
       if (!mounted) return
-      try {
-        if (typeof host.POP800?.openChat === 'function') {
-          host.POP800.openChat(projectCtx)
-          return
-        }
-      } catch {
-        // 运行时未就绪时回退本地回执
-      }
-      helpers.showReceipt(projectCtx, '回聊通道待接入')
+      options.helpers.showContactCard?.(projectCtx)
     },
     notifyRouteChange(projectCtx) {
+      if (!mounted || !trackingEnabled || !options.injectScript) return
       const key = `${projectCtx.site}:${projectCtx.path}`
-      const prev = routeLog[routeLog.length - 1]
-      if (prev && `${prev.site}:${prev.path}` === key) return
-      routeLog.push(projectCtx)
+      if (!skippedLanding && key === landingKey) {
+        skippedLanding = true
+        return
+      }
+      skippedLanding = true
+      if (key === lastTrackedKey) return
+      lastTrackedKey = key
+      ensureHmtQueue()
+      host._hmt?.push(['_trackPageview', projectCtx.path])
     },
     stop() {
       mounted = false
-      removeNode(host, POP800_SLOT_ID)
-      helpers.removeEl(RECEIPT_ID)
+      trackingEnabled = false
+      options.helpers.removeEl(RECEIPT_ID)
+      options.helpers.removeEl(CONTACT_CARD_ID)
+      options.helpers.removeEl(CONTACT_LAUNCHER_ID)
+      const script = host.document.querySelector(`script[${BAIDU_SCRIPT_ATTR}="1"]`)
+      removeNode(host, script)
     },
   }
 }
-

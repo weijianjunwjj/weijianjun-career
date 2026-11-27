@@ -1,16 +1,19 @@
+import { profile } from '../data/profile.ts'
+import { publicAsset } from '../utils/publicAsset.ts'
 import {
   WELCOME_FALLBACK_MS,
   decideVisitorAdapter,
-  hasPreviewQuery,
-  isLoopbackHost,
   isOwnerExcluded,
   isWelcomeShown,
   markWelcomeShown,
   otherSiteOwnerUrl,
   parseOwnerHash,
+  resolveBaiduHmId,
   resolveMainProjectId,
+  resolveWorkProjectId,
   sanitizeVisitorEvent,
   setOwnerExcluded,
+  shouldInjectBaiduScript,
   stripHashFromUrl,
   type PersistIo,
   type ProjectId,
@@ -18,9 +21,11 @@ import {
   type VisitorAdapterId,
 } from './ownerExclude.ts'
 import {
+  CONTACT_CARD_ID,
+  CONTACT_LAUNCHER_ID,
   RECEIPT_ID,
+  createBaiduAdapter,
   createNoneAdapter,
-  createPop800Adapter,
   createPreviewAdapter,
   type ProjectCtx,
   type VisitorChatAdapter,
@@ -31,28 +36,40 @@ export {
   decideVisitorAdapter,
   isLoopbackHost,
   isOwnerExcluded,
-  isValidPop800JobNo,
-  isValidPop800Ukey,
+  isValidBaiduHmId,
   isWelcomeShown,
   markWelcomeShown,
   parseOwnerHash,
+  resolveBaiduHmId,
   resolveMainProjectId,
   resolveWorkProjectId,
   sanitizeVisitorEvent,
   setOwnerExcluded,
+  shouldInjectBaiduScript,
 } from './ownerExclude.ts'
 
-export { createNoneAdapter, createPop800Adapter, createPreviewAdapter } from './visitorAdapter.ts'
+export { createNoneAdapter, createBaiduAdapter, createPreviewAdapter } from './visitorAdapter.ts'
 export type { ProjectCtx, VisitorChatAdapter } from './visitorAdapter.ts'
 
 const OWNER_BAR_ID = 'wjj-owner-status'
 const BUBBLE_ID = 'wjj-welcome-bubble'
 const STYLE_ID = 'wjj-visitor-widget-style'
+const COPY_RESET_MS = 2000
+
+export const PROJECT_LABELS: Record<ProjectId, string> = {
+  courier: '中邮通快递双端',
+  analytics: '友谊时光 EBI 与微前端',
+  lowcode: '企业级低代码引擎',
+  liveshop: 'LiveShop 跨端电商',
+  'ai-engineering': 'NovaWing AI 工程化',
+}
 
 const WIDGET_CSS = `
 #wjj-owner-status,
 #wjj-welcome-bubble,
-#wjj-visitor-receipt {
+#wjj-visitor-receipt,
+#wjj-contact-card,
+#wjj-contact-launcher {
   font-family: var(--font-sans, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
   color: var(--ink-primary, #f0f5ff);
   -webkit-font-smoothing: antialiased;
@@ -76,7 +93,9 @@ const WIDGET_CSS = `
 #wjj-owner-status .wjj-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 #wjj-owner-status button,
 #wjj-welcome-bubble button,
-#wjj-visitor-receipt button {
+#wjj-visitor-receipt button,
+#wjj-contact-card button,
+#wjj-contact-launcher {
   cursor: pointer;
   border-radius: 10px;
   font-size: 13px;
@@ -94,12 +113,13 @@ const WIDGET_CSS = `
   font-weight: 600;
 }
 #wjj-welcome-bubble,
-#wjj-visitor-receipt {
+#wjj-visitor-receipt,
+#wjj-contact-card {
   position: fixed;
   left: 16px;
   bottom: 16px;
   z-index: 40;
-  width: min(320px, calc(100vw - 32px));
+  width: min(360px, calc(100vw - 32px));
   padding: 14px 14px 12px;
   border-radius: 16px;
   border: 1px solid rgba(148, 179, 255, 0.18);
@@ -108,19 +128,34 @@ const WIDGET_CSS = `
   backdrop-filter: blur(16px);
 }
 #wjj-welcome-bubble p,
-#wjj-visitor-receipt p { margin: 0 20px 12px 0; font-size: 14px; line-height: 1.55; color: #d5e2f5; }
+#wjj-visitor-receipt p,
+#wjj-contact-card p { margin: 0 20px 12px 0; font-size: 14px; line-height: 1.55; color: #d5e2f5; }
 #wjj-visitor-receipt dl { margin: 0 20px 12px 0; }
 #wjj-visitor-receipt dt { font-size: 11px; letter-spacing: 0.04em; color: #6f84a8; }
 #wjj-visitor-receipt dd { margin: 0 0 8px; font-size: 13px; color: #f0f5ff; }
-#wjj-welcome-bubble .wjj-row { display: flex; gap: 8px; }
-#wjj-welcome-bubble [data-action="chat"] {
+#wjj-welcome-bubble .wjj-row,
+#wjj-contact-card .wjj-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#wjj-welcome-bubble [data-action="chat"],
+#wjj-contact-card [data-action="mailto"] {
   padding: 8px 14px;
   border: 1px solid rgba(165, 243, 252, 0.45);
   background: linear-gradient(135deg, #52eeff 0%, #38bdf8 48%, #5b82ff 100%);
   color: #030712;
+  text-decoration: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+#wjj-contact-card [data-action="copy-email"],
+#wjj-contact-card [data-action="copy-wechat"] {
+  padding: 7px 12px;
+  border: 1px solid rgba(148, 179, 255, 0.28);
+  background: rgba(16, 27, 51, 0.7);
+  color: #e6fbff;
 }
 #wjj-welcome-bubble [data-action="close"],
-#wjj-visitor-receipt [data-action="close"] {
+#wjj-visitor-receipt [data-action="close"],
+#wjj-contact-card [data-action="close"] {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -130,8 +165,53 @@ const WIDGET_CSS = `
   background: transparent;
   color: #6f84a8;
 }
+#wjj-contact-card .wjj-block { margin: 0 0 12px; }
+#wjj-contact-card .wjj-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #6f84a8;
+}
+#wjj-contact-card img[data-field="wechat-qr"] {
+  width: 168px;
+  height: 168px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 179, 255, 0.18);
+  background: rgba(8, 14, 29, 0.8);
+}
+#wjj-contact-card [data-field="wechat-placeholder"] {
+  margin: 0 0 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(148, 179, 255, 0.28);
+  color: #a3b5d4;
+  font-size: 13px;
+  line-height: 1.5;
+}
+#wjj-contact-launcher {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 35;
+  padding: 8px 12px;
+  border: 1px solid rgba(148, 179, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(11, 19, 38, 0.86);
+  color: #e6fbff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 28px -20px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(14px);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+@media (max-width: 390px) {
+  #wjj-welcome-bubble,
+  #wjj-contact-card { width: calc(100vw - 32px); }
+}
 @media (prefers-reduced-motion: reduce) {
-  #wjj-owner-status, #wjj-welcome-bubble, #wjj-visitor-receipt { backdrop-filter: none; }
+  #wjj-owner-status, #wjj-welcome-bubble, #wjj-visitor-receipt,
+  #wjj-contact-card, #wjj-contact-launcher { backdrop-filter: none; }
 }
 `
 
@@ -157,6 +237,7 @@ export type VisitorHost = VisitorHostLike & {
   }
   localStorage?: StorageLike | null
   sessionStorage?: StorageLike | null
+  navigator?: { clipboard?: { writeText: (value: string) => Promise<void> } }
   addEventListener: (type: string, listener: EventListener) => void
   removeEventListener: (type: string, listener: EventListener) => void
 }
@@ -164,8 +245,8 @@ export type VisitorHost = VisitorHostLike & {
 export type VisitorWidgetOptions = {
   site: 'main' | 'work'
   host?: VisitorHost
-  jobNo?: string
-  ukey?: string
+  baiduHmIdMain?: string
+  baiduHmIdWork?: string
   fallbackDelayMs?: number
   setTimeoutFn?: typeof setTimeout
   clearTimeoutFn?: typeof clearTimeout
@@ -179,6 +260,7 @@ type TimerHandle = ReturnType<typeof setTimeout>
 
 let started = false
 let mounted = false
+let baiduScriptInjected = false
 let adapterId: VisitorAdapterId = 'none'
 let adapter: VisitorChatAdapter = createNoneAdapter()
 let siteKind: 'main' | 'work' = 'main'
@@ -197,7 +279,7 @@ const attached: Array<{
   fn: EventListener
 }> = []
 
-function envValue(name: 'VITE_POP800_JOB_NO' | 'VITE_POP800_UKEY'): string {
+function envValue(name: 'VITE_BAIDU_HM_ID_MAIN' | 'VITE_BAIDU_HM_ID_WORK'): string {
   try {
     const value = import.meta.env?.[name]
     return typeof value === 'string' ? value : ''
@@ -256,58 +338,160 @@ function removeEl(host: VisitorHost, id: string) {
   }
 }
 
-function fieldEl(host: VisitorHost, tag: string, name: string, text: string) {
-  const el = host.document.createElement(tag)
-  el.setAttribute(`data-field`, name)
-  el.textContent = text
-  return el
+export function projectLabel(project?: ProjectId): string {
+  return project ? PROJECT_LABELS[project] : ''
 }
 
-function showReceipt(host: VisitorHost, ctx: ProjectCtx, status: string) {
+export function welcomeCopy(project?: ProjectId): string {
+  const label = projectLabel(project)
+  if (label) return `正在看「${label}」？有想交流的技术细节或岗位机会，欢迎直接联系我。`
+  return '你好，正在看哪个项目？有想交流的技术细节或岗位机会，欢迎直接联系我。'
+}
+
+export function buildMailtoHref(project?: ProjectId): string {
+  const email = profile.email
+  const label = projectLabel(project)
+  const subject = label ? `交流《${label}》项目 / 岗位沟通` : '交流项目 / 岗位沟通'
+  const body = label
+    ? `你好，魏建军。我正在看「${label}」，想交流技术细节或岗位机会。`
+    : '你好，魏建军。我想交流技术细节或岗位机会。'
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
+function copyText(host: VisitorHost, button: { textContent?: string }, value: string, idleLabel: string) {
+  const markCopied = () => {
+    button.textContent = '已复制'
+    setTimeoutFn(() => {
+      if (button.textContent === '已复制') button.textContent = idleLabel
+    }, COPY_RESET_MS)
+  }
+  const clip = host.navigator?.clipboard
+  if (clip && typeof clip.writeText === 'function') {
+    Promise.resolve(clip.writeText(value)).then(markCopied).catch(() => {})
+    return
+  }
+  markCopied()
+}
+
+function showContactCard(host: VisitorHost, ctx?: ProjectCtx) {
+  const io = ioFromHost(host)
+  if (isOwnerExcluded(io) || !hasInteractiveChannel()) return
   ensureStyle(host)
+  removeEl(host, CONTACT_CARD_ID)
+  removeEl(host, CONTACT_LAUNCHER_ID)
   removeEl(host, RECEIPT_ID)
-  const panel = host.document.createElement('div')
-  panel.id = RECEIPT_ID
-  panel.setAttribute('role', 'dialog')
-  panel.setAttribute('aria-label', '回聊预览')
+  const project = (ctx || currentCtx(host)).project
+  const card = host.document.createElement('div')
+  card.id = CONTACT_CARD_ID
+  card.setAttribute('role', 'dialog')
+  card.setAttribute('aria-modal', 'true')
+  card.setAttribute('aria-label', '直联魏建军')
 
   const close = host.document.createElement('button')
   close.type = 'button'
   close.setAttribute('data-action', 'close')
   close.setAttribute('aria-label', '关闭')
   close.textContent = '×'
-  close.addEventListener('click', () => removeEl(host, RECEIPT_ID))
-  panel.appendChild(close)
+  close.addEventListener('click', () => hideContactCard(host))
+  card.appendChild(close)
 
   const title = host.document.createElement('p')
-  title.textContent = '本地预览回执'
-  panel.appendChild(title)
+  title.textContent = '邮箱 / 微信直联'
+  card.appendChild(title)
 
-  const dl = host.document.createElement('dl')
-  dl.appendChild(fieldEl(host, 'dt', 'site-label', '站点'))
-  dl.appendChild(fieldEl(host, 'dd', 'site', ctx.site))
-  dl.appendChild(fieldEl(host, 'dt', 'path-label', '路径'))
-  dl.appendChild(fieldEl(host, 'dd', 'path', ctx.path))
-  dl.appendChild(fieldEl(host, 'dt', 'project-label', '项目'))
-  dl.appendChild(fieldEl(host, 'dd', 'project', ctx.project || '（未指定）'))
-  dl.appendChild(fieldEl(host, 'dt', 'status-label', '状态'))
-  dl.appendChild(fieldEl(host, 'dd', 'status', status))
-  panel.appendChild(dl)
+  const mailBlock = host.document.createElement('div')
+  mailBlock.setAttribute('class', 'wjj-block')
+  const mailLabel = host.document.createElement('span')
+  mailLabel.setAttribute('class', 'wjj-label')
+  mailLabel.textContent = '邮箱'
+  mailBlock.appendChild(mailLabel)
+  const mailRow = host.document.createElement('div')
+  mailRow.setAttribute('class', 'wjj-row')
+  const mail = host.document.createElement('a')
+  mail.href = buildMailtoHref(project)
+  mail.setAttribute('data-action', 'mailto')
+  mail.textContent = '一键发邮件（打开 Mail）'
+  mailRow.appendChild(mail)
+  const copyEmail = host.document.createElement('button')
+  copyEmail.type = 'button'
+  copyEmail.setAttribute('data-action', 'copy-email')
+  copyEmail.textContent = '复制邮箱'
+  copyEmail.addEventListener('click', () => copyText(host, copyEmail, profile.email, '复制邮箱'))
+  mailRow.appendChild(copyEmail)
+  mailBlock.appendChild(mailRow)
+  card.appendChild(mailBlock)
 
-  host.document.body?.appendChild(panel)
+  const wechatBlock = host.document.createElement('div')
+  wechatBlock.setAttribute('class', 'wjj-block')
+  const wechatLabel = host.document.createElement('span')
+  wechatLabel.setAttribute('class', 'wjj-label')
+  wechatLabel.textContent = '个人微信'
+  wechatBlock.appendChild(wechatLabel)
+
+  const qr = host.document.createElement('img')
+  qr.setAttribute('data-field', 'wechat-qr')
+  qr.setAttribute('alt', '魏建军个人微信二维码')
+  qr.setAttribute('width', '168')
+  qr.setAttribute('height', '168')
+  qr.src = publicAsset('contact/wechat-qr.webp')
+
+  const placeholder = host.document.createElement('p')
+  placeholder.setAttribute('data-field', 'wechat-placeholder')
+  placeholder.hidden = true
+  placeholder.textContent = `微信二维码尚未放入。可复制微信号 / 电话：${profile.phone}`
+
+  const degradeQr = () => {
+    qr.hidden = true
+    placeholder.hidden = false
+  }
+  qr.onerror = degradeQr
+  qr.addEventListener('error', degradeQr)
+  wechatBlock.appendChild(qr)
+  wechatBlock.appendChild(placeholder)
+
+  const copyWechat = host.document.createElement('button')
+  copyWechat.type = 'button'
+  copyWechat.setAttribute('data-action', 'copy-wechat')
+  copyWechat.textContent = '复制微信号'
+  copyWechat.addEventListener('click', () => copyText(host, copyWechat, profile.phone, '复制微信号'))
+  wechatBlock.appendChild(copyWechat)
+  card.appendChild(wechatBlock)
+
+  host.document.body?.appendChild(card)
 }
 
-function receiptHelpers(host: VisitorHost) {
-  return {
-    ensureStyle: () => ensureStyle(host),
-    removeEl: (id: string) => removeEl(host, id),
-    showReceipt: (ctx: ProjectCtx, status: string) => showReceipt(host, ctx, status),
-  }
+function hideContactCard(host: VisitorHost, options: { persistLauncher?: boolean } = {}) {
+  removeEl(host, CONTACT_CARD_ID)
+  if (options.persistLauncher !== false) showContactLauncher(host)
+}
+
+function showContactLauncher(host: VisitorHost) {
+  const io = ioFromHost(host)
+  if (isOwnerExcluded(io) || !hasInteractiveChannel()) return
+  if (!isWelcomeShown(io)) return
+  if (host.document.getElementById(BUBBLE_ID)) return
+  if (host.document.getElementById(CONTACT_CARD_ID)) return
+  if (host.document.getElementById(CONTACT_LAUNCHER_ID)) return
+  ensureStyle(host)
+  const launcher = host.document.createElement('button')
+  launcher.id = CONTACT_LAUNCHER_ID
+  launcher.type = 'button'
+  launcher.setAttribute('data-action', 'launcher')
+  launcher.setAttribute('aria-label', '联系魏建军')
+  launcher.textContent = '联系魏建军'
+  launcher.addEventListener('click', () => showContactCard(host, currentCtx(host)))
+  host.document.body?.appendChild(launcher)
+}
+
+function hideContactLauncher(host: VisitorHost) {
+  removeEl(host, CONTACT_LAUNCHER_ID)
 }
 
 function stopLiveVisitorSurface(host: VisitorHost) {
   cancelFallbackTimer()
-  hideWelcomeBubble(host)
+  hideWelcomeBubble(host, { persistLauncher: false })
+  hideContactCard(host, { persistLauncher: false })
+  hideContactLauncher(host)
   lastEvent = null
   adapter.stop()
 }
@@ -340,13 +524,13 @@ function showOwnerStatusBar(host: VisitorHost) {
   bar.setAttribute('role', 'status')
 
   const status = host.document.createElement('p')
-  if (excluded && mounted && adapterId === 'pop800') {
+  if (excluded && baiduScriptInjected) {
     status.innerHTML =
-      '<strong>站长排除已开启</strong> · 访客回聊通道不会加载，也不会产生访问记录。当前页此前已激活外部通道，请刷新一次页面以彻底断开连接。'
+      '<strong>站长排除已开启</strong> · 访客统计与联系入口不会加载，也不会产生访问记录。当前页此前已注入百度统计，请刷新一次页面以彻底断开连接。'
   } else if (excluded) {
-    status.innerHTML = '<strong>站长排除已开启</strong> · 访客回聊通道不会加载，也不会产生访问记录。'
+    status.innerHTML = '<strong>站长排除已开启</strong> · 访客统计与联系入口不会加载，也不会产生访问记录。'
   } else {
-    status.innerHTML = '<strong>站长排除未开启</strong> · 当前浏览器会按访客处理（已配置通道时提供回聊入口）。'
+    status.innerHTML = '<strong>站长排除未开启</strong> · 当前浏览器会按访客处理（生产域提供欢迎与直联入口）。'
   }
   bar.appendChild(status)
 
@@ -400,7 +584,7 @@ function cancelFallbackTimer() {
 }
 
 function hasInteractiveChannel(): boolean {
-  return adapterId === 'pop800' || adapterId === 'preview'
+  return adapterId === 'baidu' || adapterId === 'preview'
 }
 
 function shouldOfferWelcome(host: VisitorHost): boolean {
@@ -431,9 +615,11 @@ function currentCtx(host: VisitorHost): ProjectCtx {
       projectId: project,
     })
   }
+  const path = host.location.pathname || '/'
   return sanitizeVisitorEvent({
     site: 'work',
-    path: host.location.pathname || '/',
+    path,
+    projectId: resolveWorkProjectId(path),
   })
 }
 
@@ -444,11 +630,12 @@ function showWelcomeBubble(host: VisitorHost) {
   if (host.document.getElementById(BUBBLE_ID)) return
   ensureStyle(host)
   markWelcomeShown(io)
+  hideContactLauncher(host)
 
   const bubble = host.document.createElement('div')
   bubble.id = BUBBLE_ID
   bubble.setAttribute('role', 'dialog')
-  bubble.setAttribute('aria-label', '访客留言')
+  bubble.setAttribute('aria-label', '访客欢迎')
 
   const close = host.document.createElement('button')
   close.type = 'button'
@@ -459,7 +646,8 @@ function showWelcomeBubble(host: VisitorHost) {
   bubble.appendChild(close)
 
   const copy = host.document.createElement('p')
-  copy.textContent = '你好，正在看哪个项目？有想了解的细节可以直接聊聊或留言。'
+  copy.setAttribute('data-field', 'welcome-copy')
+  copy.textContent = welcomeCopy(currentCtx(host).project)
   bubble.appendChild(copy)
 
   const row = host.document.createElement('div')
@@ -467,18 +655,21 @@ function showWelcomeBubble(host: VisitorHost) {
   const chat = host.document.createElement('button')
   chat.type = 'button'
   chat.setAttribute('data-action', 'chat')
-  chat.textContent = '聊聊 / 留言'
+  chat.textContent = '邮箱 / 微信直联'
   chat.addEventListener('click', () => {
-    hideWelcomeBubble(host)
-    adapter.openChat(currentCtx(host))
+    hideWelcomeBubble(host, { persistLauncher: false })
+    const ctx = currentCtx(host)
+    showContactCard(host, ctx)
+    adapter.openChat(ctx)
   })
   row.appendChild(chat)
   bubble.appendChild(row)
   host.document.body?.appendChild(bubble)
 }
 
-function hideWelcomeBubble(host: VisitorHost) {
+function hideWelcomeBubble(host: VisitorHost, options: { persistLauncher?: boolean } = {}) {
   removeEl(host, BUBBLE_ID)
+  if (options.persistLauncher !== false) showContactLauncher(host)
 }
 
 function emitMainRoute(host: VisitorHost) {
@@ -494,15 +685,16 @@ function emitMainRoute(host: VisitorHost) {
 function buildAdapter(
   host: VisitorHost,
   id: VisitorAdapterId,
-  creds: { jobNo: string; ukey: string },
+  hmId: string,
+  injectScript: boolean,
 ): VisitorChatAdapter {
-  const helpers = receiptHelpers(host)
-  if (id === 'preview') return createPreviewAdapter(helpers)
-  if (id === 'pop800') {
-    const allowThirdPartyScript =
-      !isLoopbackHost(host.location.hostname) || hasPreviewQuery(host.location.search)
-    return createPop800Adapter(host, creds, helpers, { allowThirdPartyScript })
+  const helpers = {
+    ensureStyle: () => ensureStyle(host),
+    removeEl: (elId: string) => removeEl(host, elId),
+    showContactCard: (ctx: ProjectCtx) => showContactCard(host, ctx),
   }
+  if (id === 'preview') return createPreviewAdapter(helpers)
+  if (id === 'baidu') return createBaiduAdapter(host, { hmId, injectScript, helpers })
   return createNoneAdapter()
 }
 
@@ -552,22 +744,30 @@ export function setupVisitorWidget(options: VisitorWidgetOptions): {
     if (key !== 'Escape') return
     removeEl(host, OWNER_BAR_ID)
     if (host.document.getElementById(BUBBLE_ID)) hideWelcomeBubble(host)
+    if (host.document.getElementById(CONTACT_CARD_ID)) hideContactCard(host)
     if (host.document.getElementById(RECEIPT_ID)) removeEl(host, RECEIPT_ID)
   })
 
   const io = ioFromHost(host)
-  const jobNo = options.jobNo ?? envValue('VITE_POP800_JOB_NO')
-  const ukey = options.ukey ?? envValue('VITE_POP800_UKEY')
+  const hmId = resolveBaiduHmId({
+    site: siteKind,
+    mainId: options.baiduHmIdMain ?? envValue('VITE_BAIDU_HM_ID_MAIN'),
+    workId: options.baiduHmIdWork ?? envValue('VITE_BAIDU_HM_ID_WORK'),
+  })
   const decision = decideVisitorAdapter({
     ownerExcluded: isOwnerExcluded(io),
     hostname: host.location.hostname,
     search: host.location.search,
-    jobNo,
-    ukey,
   })
 
   adapterId = decision.adapter
-  adapter = buildAdapter(host, adapterId, { jobNo, ukey })
+  const injectScript = shouldInjectBaiduScript({
+    ownerExcluded: isOwnerExcluded(io),
+    hostname: host.location.hostname,
+    hmId,
+  })
+  baiduScriptInjected = injectScript
+  adapter = buildAdapter(host, adapterId, hmId, injectScript)
 
   if (decision.adapter === 'none') {
     mounted = false
@@ -585,6 +785,7 @@ export function setupVisitorWidget(options: VisitorWidgetOptions): {
   mounted = true
   if (siteKind === 'main') emitMainRoute(host)
   scheduleWelcome(host)
+  if (isWelcomeShown(io) && !host.document.getElementById(BUBBLE_ID)) showContactLauncher(host)
   return { adapter: adapterId, mounted: true }
 }
 
@@ -600,6 +801,7 @@ export function resetVisitorWidgetForTests(): void {
   adapter.stop()
   started = false
   mounted = false
+  baiduScriptInjected = false
   adapterId = 'none'
   adapter = createNoneAdapter()
   hostRef = null
@@ -616,6 +818,7 @@ export function getVisitorWidgetDebugState(): {
   lastPathKey: string
   lastEvent: SanitizedEvent | null
   hasFallbackTimer: boolean
+  baiduScriptInjected: boolean
 } {
   return {
     adapter: adapterId,
@@ -623,5 +826,6 @@ export function getVisitorWidgetDebugState(): {
     lastPathKey,
     lastEvent,
     hasFallbackTimer: fallbackTimer != null,
+    baiduScriptInjected,
   }
 }

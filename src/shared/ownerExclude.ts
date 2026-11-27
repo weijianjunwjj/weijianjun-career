@@ -7,8 +7,7 @@ export const WELCOME_STORAGE_KEY = 'wjj.welcome_shown'
 export const FLAG_VALUE = '1'
 export const OWNER_COOKIE_MAX_AGE = 31536000
 export const ROOT_COOKIE_DOMAIN = '.weijianjun.me'
-export const POP800_JOB_NO_PATTERN = /^\d+$/
-export const POP800_UKEY_PATTERN = /^[a-zA-Z0-9]+$/
+export const BAIDU_HM_ID_PATTERN = /^[a-f0-9]{32}$/i
 export const WELCOME_FALLBACK_MS = 4000
 export const PREVIEW_QUERY = 'visitor-preview'
 
@@ -22,10 +21,10 @@ export const PROJECT_WHITELIST = [
 
 export type ProjectId = (typeof PROJECT_WHITELIST)[number]
 export type OwnerHashAction = 'exclude' | 'include' | 'status'
-export type VisitorAdapterId = 'none' | 'pop800' | 'preview'
+export type VisitorAdapterId = 'none' | 'baidu' | 'preview'
 export type VisitorSkipReason = 'owner' | 'loopback' | 'none'
 export type VisitorAdapterDecision =
-  | { adapter: 'pop800' | 'preview' }
+  | { adapter: 'baidu' | 'preview' }
   | { adapter: 'none'; reason: VisitorSkipReason }
 
 export type StorageLike = {
@@ -57,12 +56,32 @@ export function isWeijianjunHost(hostname: string): boolean {
   return host === 'weijianjun.me' || host.endsWith('.weijianjun.me')
 }
 
-export function isValidPop800JobNo(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0 && value.length <= 16 && POP800_JOB_NO_PATTERN.test(value)
+export function isValidBaiduHmId(value: unknown): value is string {
+  return typeof value === 'string' && BAIDU_HM_ID_PATTERN.test(value)
 }
 
-export function isValidPop800Ukey(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0 && value.length <= 64 && POP800_UKEY_PATTERN.test(value)
+export function resolveBaiduHmId(input: {
+  site: 'main' | 'work'
+  mainId: unknown
+  workId: unknown
+}): string {
+  if (input.site === 'work') {
+    if (isValidBaiduHmId(input.workId)) return input.workId
+    if (isValidBaiduHmId(input.mainId)) return input.mainId
+    return ''
+  }
+  return isValidBaiduHmId(input.mainId) ? input.mainId : ''
+}
+
+export function shouldInjectBaiduScript(input: {
+  ownerExcluded: boolean
+  hostname: string
+  hmId: unknown
+}): boolean {
+  if (input.ownerExcluded) return false
+  if (!isValidBaiduHmId(input.hmId)) return false
+  if (isLoopbackHost(input.hostname)) return false
+  return isWeijianjunHost(input.hostname)
 }
 
 export function hasPreviewQuery(search: string): boolean {
@@ -188,15 +207,13 @@ export function decideVisitorAdapter(input: {
   ownerExcluded: boolean
   hostname: string
   search: string
-  jobNo: unknown
-  ukey: unknown
 }): VisitorAdapterDecision {
   if (input.ownerExcluded) return { adapter: 'none', reason: 'owner' }
   if (isLoopbackHost(input.hostname) && !hasPreviewQuery(input.search)) {
     return { adapter: 'none', reason: 'loopback' }
   }
-  if (isValidPop800JobNo(input.jobNo) && isValidPop800Ukey(input.ukey)) {
-    return { adapter: 'pop800' }
+  if (!isLoopbackHost(input.hostname) && isWeijianjunHost(input.hostname)) {
+    return { adapter: 'baidu' }
   }
   if (hasPreviewQuery(input.search)) return { adapter: 'preview' }
   return { adapter: 'none', reason: 'none' }
@@ -227,7 +244,8 @@ export function sanitizeVisitorPath(raw: unknown): string {
   }
 
   if (path.includes('@') || !SAFE_PATH_RE.test(path) || path.length > 160) return '/'
-  return path.startsWith('/') ? path : `/${path}`
+  const withSlash = path.startsWith('/') ? path : `/${path}`
+  return withSlash.replace(/\/+$/, '') || '/'
 }
 
 export function sanitizeVisitorEvent(input: {

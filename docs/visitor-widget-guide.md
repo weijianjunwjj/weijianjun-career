@@ -1,12 +1,12 @@
 # 访客组件操作说明（国内解耦底座）
 
-本站主站 `weijianjun.me` 与子站 `work.weijianjun.me` 共用一套**账号无关**的访客回聊底座。默认面向中国大陆不翻墙直连，不加载海外聊天脚本。站长浏览时必须先排除自己，否则会污染欢迎频次与后续通道统计。
+本站主站 `weijianjun.me` 与子站 `work.weijianjun.me` 共用一套**账号无关**的访客底座。默认面向中国大陆不翻墙直连，不加载海外聊天脚本。站长浏览时必须先排除自己，否则会污染欢迎频次与百度统计。
 
 ## 架构
 
-1. **采集前守卫**：站长排除或 loopback 默认（除非显式 `?visitor-preview=1`）在挂载任何回聊 Adapter、加载任何第三方脚本之前终止。
-2. **可插拔 Adapter**：`none` / `pop800` / `preview`。有效 POP800 配置优先；否则本地预览查询走 `preview`；都没有则 `none`（不向生产访客弹空按钮）。
-3. **前端自主欢迎**：与客服账号、在线状态解耦。非站长、本轮未欢迎、页面可见、停留约 3–4 秒、且存在可用交互承载层时，弹出一次轻气泡。
+1. **采集前守卫**：`isOwnerExcluded()` 为真时，绝不插入 `https://hm.baidu.com/hm.js`、绝不初始化 `window._hmt`、绝不弹欢迎气泡、绝不渲染联系卡或胶囊。loopback 默认也不注入真实百度脚本。
+2. **可插拔 Adapter**：`none` / `baidu` / `preview`。生产域（`weijianjun.me` / `*.weijianjun.me`）走 `baidu`（合法 ID 才注入 hm.js，联系卡始终可用）；loopback 带 `?visitor-preview=1` 走 `preview`（完整欢迎与联系卡，不发 hm.js）；其余为 `none`。
+3. **前端自主欢迎 + 自研深空联系卡**：与任何第三方客服账号解耦。非站长、本轮未欢迎、页面可见、停留约 4 秒时弹出一次欢迎气泡；点击后展开邮箱 / 微信直联卡片。
 
 主站 `src/main.ts` 与子站 `work/main.ts` 都调用同一套 `setupVisitorWidget`（防重复初始化）。子站 `WorkApp.vue` 在路由变化后调用 `notifyVisitorRouteChange`。
 
@@ -16,14 +16,25 @@
 
 | 变量 | 含义 | 备注 |
 | --- | --- | --- |
-| `VITE_POP800_JOB_NO` | POP800 工号 | 纯数字公开标识，不是密钥 |
-| `VITE_POP800_UKEY` | POP800 ukey | 安全字母数字公开标识，不是密钥 |
+| `VITE_BAIDU_HM_ID_MAIN` | 主站 `weijianjun.me` 百度统计 ID | 32 位十六进制公开 ID，不是密钥 |
+| `VITE_BAIDU_HM_ID_WORK` | 子站 `work.weijianjun.me` 百度统计 ID | 留空回退 `VITE_BAIDU_HM_ID_MAIN` |
 
-两者任一为空或格式不合法时，运行时优雅回退 `none`，**零外链请求**。请把真实值写在未跟踪的 `.env` / `.env.local` 或 CI `vars.VITE_POP800_JOB_NO` / `vars.VITE_POP800_UKEY`，不要提交进仓库。占位写法见根目录 `.env.example`。
+格式须匹配 `/^[a-f0-9]{32}$/i`。留空则优雅跳过脚本注入，**零外链请求**，生产域仍展示欢迎与联系卡。请把真实值写在未跟踪的 `.env` / `.env.local` 或 CI `vars.VITE_BAIDU_HM_ID_MAIN` / `vars.VITE_BAIDU_HM_ID_WORK`（使用 `vars.*`，不要用 `secrets.*`），不要提交进仓库。占位写法见根目录 `.env.example`。
 
-本阶段只预置 POP800 容器与 `openChat` 调用位，不硬编码真实账号，也不写入 `800.js` 的 `src`。loopback 即使填了 ID，默认仍不加载第三方脚本，除非带 `?visitor-preview=1`。
+仅在**生产域 + 合法 ID + 非站长**时动态插入 `https://hm.baidu.com/hm.js?<id>`（带 `data-wjj-baidu="1"` 防重）。静态 `dist/index.html` 与 `dist-work/index.html` 不含任何 `src="https?://"` 外链。loopback 即使填了 ID，默认也不向真实百度发数据；`?visitor-preview=1` 只用于本地预览 UI。
 
-本地 loopback（`localhost` / `127.0.0.1` / `::1`）默认不挂载通道。需要本地预览欢迎气泡与回执面板时，在 URL 加上 **`?visitor-preview=1`**。
+## SPA 虚拟 PV（零 PII）
+
+挂载时 `window._hmt = window._hmt || []`。`work.weijianjun.me` 经 `notifyVisitorRouteChange` 的 SPA `pushState` 切页：跳过与初始落地页相同的首条（避免首屏重复记两次 PV）；相同路径去重；只 `window._hmt.push(['_trackPageview', sanitizedPath])`，路径经白名单脱敏，不含 query / PII / 用户输入。
+
+## 微信二维码槽位
+
+真实二维码**不要**提交进未跟踪的 `assets/`，放入站点 public：
+
+- 主站：`public/contact/wechat-qr.webp` → 运行时 `/contact/wechat-qr.webp`
+- 子站：`work/public/contact/wechat-qr.webp` → 运行时 `/contact/wechat-qr.webp`
+
+文件尚未放入或图片 `onerror` 时不显示破图，改为占位提示 +「复制微信号 / 电话」。禁止使用中邮通快递的 `mini-qr.png`。
 
 ## 站长排除（免 DevTools）
 
@@ -42,7 +53,7 @@
 
 页面会出现仅站长可见的浮动提示条：显示当前状态、「切换排除状态」、「同步标记另一站」、Esc 关闭。普通访客看不到该提示条。解除排除时会同步清理 host-only Cookie。
 
-中途开启排除会立即止血：取消欢迎定时器、关闭气泡、调用 `adapter.stop()`。若此前已激活外部通道（如 POP800），提示条会请你刷新一次以彻底断开。
+中途开启排除会立即止血：取消欢迎定时器、关闭气泡、关闭联系卡、隐藏「联系魏建军」胶囊、调用 `adapter.stop()` 且不再 `_hmt.push`。若此前已注入真实 hm.js，提示条会请你刷新一次以彻底断开。
 
 ### 常用浏览器 / 新设备 / 无痕
 
@@ -50,7 +61,7 @@
 2. 看到提示条显示「站长排除已开启」即可。同一台电脑的主站与子站会共享根域 Cookie。
 3. `localStorage` 按源隔离。若某一侧仍出现欢迎气泡，点提示条里的「同步标记另一站」，在另一源再写一次标记。
 4. **新设备、无痕窗口、清站点数据、换浏览器配置文件** 都不会带上旧标记，需要再走一遍 `#owner-exclude`。
-5. 排除一旦生效：采集前即终止，**不会**挂载 Adapter、**不会**发外链请求、**不会**弹欢迎气泡。
+5. 排除一旦生效：采集前即终止，**不会**挂载 Adapter、**不会**发外链请求、**不会**弹欢迎气泡、**不会**渲染联系入口。
 
 ## 到站单次自动欢迎
 
@@ -59,23 +70,39 @@
 - 非站长
 - 未标记 `welcome_shown`
 - `document.visibilityState === 'visible'`
-- 停留约 3–4 秒（延迟可注入，便于单测）
-- 存在可用交互承载层：已配置有效 POP800 Adapter，或本地带 `?visitor-preview=1`
+- 停留约 4 秒（延迟可注入，便于单测）
+- 生产域，或本地带 `?visitor-preview=1`
 
-未配置通道且非预览时，**不向生产访客弹空按钮**。
+loopback 默认静默。
 
 防连弹：
 
 - 根域会话 Cookie `wjj_welcome_shown=1`（生产域带 `Domain=.weijianjun.me`，**不设 Max-Age/Expires**）
 - 同源 `sessionStorage` 键 `wjj.welcome_shown=1`
 
-同一次来访内刷新、SPA 切项目、主/子站互跳只弹一次。关标签即重置。
+同一次来访内刷新、SPA 切项目、主/子站互跳只弹一次。关标签即重置。页面隐藏时暂停定时器。
 
-在页约束：`visibilitychange -> hidden` 时取消未触发定时器；返回可见且尚未展示过时再重新计时。
+欢迎文案随项目自适应：
 
-交互：自然可忽略轻气泡（「你好，正在看哪个项目？有想了解的细节可以直接聊聊或留言。」）。「聊聊 / 留言」调用 `adapter.openChat(projectCtx)`；「关闭」或 Esc 关闭，本轮不再弹。
+| 项目 id | 中文名 |
+| --- | --- |
+| `courier` | 中邮通快递双端 |
+| `analytics` | 友谊时光 EBI 与微前端 |
+| `lowcode` | 企业级低代码引擎 |
+| `liveshop` | LiveShop 跨端电商 |
+| `ai-engineering` | NovaWing AI 工程化 |
 
-`preview` Adapter 会打开极简本地回执面板，展示当前匿名项目上下文（`site` / `path` / `project`）与「回聊通道待接入」，不发外网请求。
+有项目：「正在看「企业级低代码引擎」？有想交流的技术细节或岗位机会，欢迎直接联系我。」
+无项目：「你好，正在看哪个项目？有想交流的技术细节或岗位机会，欢迎直接联系我。」
+主按钮：「邮箱 / 微信直联」；右上角关闭（Esc）。
+
+点击后展开深空玻璃直联卡片（邮箱、微信号取自 `src/data/profile.ts`）：
+
+1. `mailto:` 一键发邮件（打开 Mail），`subject` / `body` 自动编码当前项目中文名；不设 `target="_blank"`。旁配「复制邮箱」，点击后约 2 秒显示「已复制」。
+2. 个人微信二维码槽位 `publicAsset('contact/wechat-qr.webp')`。「复制微信号」复制电话 `18352517082`。
+3. 欢迎关闭后，左下角极克制胶囊「联系魏建军」可再次打开卡片。站长排除开启时该按钮绝不渲染。
+
+`Esc` 关闭、`role="dialog"`、尊重 `prefers-reduced-motion`。390px 窄屏与桌面均停在左下，不遮挡主按钮。
 
 ## 匿名项目上下文
 
