@@ -55,6 +55,10 @@ const OWNER_BAR_ID = 'wjj-owner-status'
 const BUBBLE_ID = 'wjj-welcome-bubble'
 const STYLE_ID = 'wjj-visitor-widget-style'
 const COPY_RESET_MS = 2000
+const WECHAT_QR_WEBP = 'contact/wechat-qr.webp'
+const WECHAT_QR_JPG = 'contact/wechat-qr.jpg'
+const QR_PRELOAD_IDLE_TIMEOUT_MS = 2500
+const QR_PRELOAD_TIMEOUT_MS = 1200
 
 export const PROJECT_LABELS: Record<ProjectId, string> = {
   courier: '中邮通快递双端',
@@ -330,12 +334,16 @@ export type VisitorHost = VisitorHostLike & {
   document: VisitorHostLike['document'] & {
     cookie: string
     visibilityState: string
+    readyState?: string
     addEventListener: (type: string, listener: EventListener) => void
     removeEventListener: (type: string, listener: EventListener) => void
   }
   localStorage?: StorageLike | null
   sessionStorage?: StorageLike | null
   navigator?: { clipboard?: { writeText: (value: string) => Promise<void> } }
+  Image?: new () => { src: string }
+  requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+  cancelIdleCallback?: (handle: number) => void
   addEventListener: (type: string, listener: EventListener) => void
   removeEventListener: (type: string, listener: EventListener) => void
 }
@@ -371,6 +379,9 @@ let setTimeoutFn: typeof setTimeout = setTimeout
 let clearTimeoutFn: typeof clearTimeout = clearTimeout
 let mainSiteUrl = 'https://weijianjun.me/'
 let workSiteUrl = 'https://work.weijianjun.me/'
+let qrPreloaded = false
+let qrPreloadTimer: TimerHandle | number | null = null
+let qrPreloadViaIdle = false
 const attached: Array<{
   target: { addEventListener: Function; removeEventListener: Function }
   type: string
@@ -459,6 +470,92 @@ export function buildMailtoHref(project?: ProjectId): string {
   return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
 
+function wechatQrWebpSrc() {
+  return publicAsset(WECHAT_QR_WEBP)
+}
+
+function wechatQrJpgSrc() {
+  return publicAsset(WECHAT_QR_JPG)
+}
+
+function createPreloadImage(host: VisitorHost): { src: string } | null {
+  if (typeof host.Image === 'function') return new host.Image()
+  const fromGlobal = (globalThis as { Image?: new () => { src: string } }).Image
+  if (typeof fromGlobal === 'function') return new fromGlobal()
+  return null
+}
+
+function hostIdle(host: VisitorHost) {
+  const globalIdle = globalThis as typeof globalThis & {
+    requestIdleCallback?: VisitorHost['requestIdleCallback']
+    cancelIdleCallback?: VisitorHost['cancelIdleCallback']
+  }
+  const request = host.requestIdleCallback
+    ? host.requestIdleCallback.bind(host)
+    : globalIdle.requestIdleCallback
+      ? globalIdle.requestIdleCallback.bind(globalIdle)
+      : undefined
+  const cancel = host.cancelIdleCallback
+    ? host.cancelIdleCallback.bind(host)
+    : globalIdle.cancelIdleCallback
+      ? globalIdle.cancelIdleCallback.bind(globalIdle)
+      : undefined
+  return { request, cancel }
+}
+
+function cancelSilentQrPreload(host: VisitorHost) {
+  if (qrPreloadTimer == null) return
+  if (qrPreloadViaIdle) hostIdle(host).cancel?.(qrPreloadTimer as number)
+  else clearTimeoutFn(qrPreloadTimer as TimerHandle)
+  qrPreloadTimer = null
+  qrPreloadViaIdle = false
+}
+
+function preloadWechatQr(host: VisitorHost) {
+  if (qrPreloaded) return
+  if (isOwnerExcluded(ioFromHost(host)) || !hasInteractiveChannel()) return
+  qrPreloaded = true
+  qrPreloadTimer = null
+  qrPreloadViaIdle = false
+  const img = createPreloadImage(host)
+  if (!img) return
+  img.src = wechatQrWebpSrc()
+}
+
+function bindSilentQrPreloadTriggers(host: VisitorHost, el: { addEventListener: (type: string, listener: EventListener) => void }) {
+  const kick = () => preloadWechatQr(host)
+  el.addEventListener('pointerenter', kick)
+  el.addEventListener('focus', kick)
+  el.addEventListener('touchstart', kick)
+}
+
+function scheduleSilentQrPreload(host: VisitorHost) {
+  if (isOwnerExcluded(ioFromHost(host)) || !hasInteractiveChannel()) return
+  const runIdle = () => {
+    if (qrPreloaded || qrPreloadTimer != null) return
+    if (isOwnerExcluded(ioFromHost(host)) || !hasInteractiveChannel()) return
+    const idle = hostIdle(host)
+    if (typeof idle.request === 'function') {
+      qrPreloadViaIdle = true
+      qrPreloadTimer = idle.request(() => {
+        qrPreloadTimer = null
+        preloadWechatQr(host)
+      }, { timeout: QR_PRELOAD_IDLE_TIMEOUT_MS })
+      return
+    }
+    qrPreloadViaIdle = false
+    qrPreloadTimer = setTimeoutFn(() => {
+      qrPreloadTimer = null
+      preloadWechatQr(host)
+    }, QR_PRELOAD_TIMEOUT_MS)
+  }
+  if (host.document.readyState === 'complete') {
+    runIdle()
+    return
+  }
+  listen(host, 'load', () => runIdle())
+}
+
 function copyText(host: VisitorHost, button: { textContent?: string }, value: string, idleLabel: string) {
   const markCopied = () => {
     button.textContent = '已复制'
@@ -535,19 +632,27 @@ function showContactCard(host: VisitorHost, ctx?: ProjectCtx) {
   qr.setAttribute('alt', '魏建军个人微信二维码')
   qr.setAttribute('width', '184')
   qr.setAttribute('height', '234')
-  qr.src = publicAsset('contact/wechat-qr.jpg')
+  qr.src = wechatQrWebpSrc()
 
   const placeholder = host.document.createElement('p')
   placeholder.setAttribute('data-field', 'wechat-placeholder')
   placeholder.hidden = true
   placeholder.textContent = `微信二维码尚未放入。可复制微信号 / 电话：${profile.phone}`
 
+  let qrFallback: 'webp' | 'jpg' | 'text' = 'webp'
   const degradeQr = () => {
-    qr.hidden = true
-    placeholder.hidden = false
+    if (qrFallback === 'webp') {
+      qrFallback = 'jpg'
+      qr.src = wechatQrJpgSrc()
+      return
+    }
+    if (qrFallback === 'jpg') {
+      qrFallback = 'text'
+      qr.hidden = true
+      placeholder.hidden = false
+    }
   }
   qr.onerror = degradeQr
-  qr.addEventListener('error', degradeQr)
   wechatBlock.appendChild(qr)
   wechatBlock.appendChild(placeholder)
 
@@ -586,6 +691,7 @@ function showContactLauncher(host: VisitorHost) {
   launcher.appendChild(pulse)
   launcher.appendChild(label)
   launcher.addEventListener('click', () => showContactCard(host, currentCtx(host)))
+  bindSilentQrPreloadTriggers(host, launcher)
   host.document.body?.appendChild(launcher)
 }
 
@@ -595,6 +701,7 @@ function hideContactLauncher(host: VisitorHost) {
 
 function stopLiveVisitorSurface(host: VisitorHost) {
   cancelFallbackTimer()
+  cancelSilentQrPreload(host)
   hideWelcomeBubble(host, { persistLauncher: false })
   hideContactCard(host, { persistLauncher: false })
   hideContactLauncher(host)
@@ -778,6 +885,7 @@ function showWelcomeBubble(host: VisitorHost) {
   })
   row.appendChild(chat)
   bubble.appendChild(row)
+  bindSilentQrPreloadTriggers(host, bubble)
   host.document.body?.appendChild(bubble)
 }
 
@@ -900,11 +1008,16 @@ export function setupVisitorWidget(options: VisitorWidgetOptions): {
   if (siteKind === 'main') emitMainRoute(host)
   scheduleWelcome(host)
   showContactLauncher(host)
+  scheduleSilentQrPreload(host)
   return { adapter: adapterId, mounted: true }
 }
 
 export function resetVisitorWidgetForTests(): void {
   cancelFallbackTimer()
+  if (hostRef) cancelSilentQrPreload(hostRef)
+  qrPreloaded = false
+  qrPreloadTimer = null
+  qrPreloadViaIdle = false
   for (const item of attached.splice(0)) {
     try {
       item.target.removeEventListener(item.type, item.fn)
@@ -933,6 +1046,7 @@ export function getVisitorWidgetDebugState(): {
   lastEvent: SanitizedEvent | null
   hasFallbackTimer: boolean
   baiduScriptInjected: boolean
+  qrPreloaded: boolean
 } {
   return {
     adapter: adapterId,
@@ -941,5 +1055,6 @@ export function getVisitorWidgetDebugState(): {
     lastEvent,
     hasFallbackTimer: fallbackTimer != null,
     baiduScriptInjected,
+    qrPreloaded,
   }
 }

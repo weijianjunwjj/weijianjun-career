@@ -119,6 +119,10 @@ function createEl(tag, registry) {
     click() {
       for (const fn of listeners.click || []) fn({ type: 'click' })
     },
+    dispatch(type, event) {
+      const payload = event || { type }
+      for (const fn of listeners[type] || []) fn(payload)
+    },
     triggerError() {
       el.onerror?.({ type: 'error' })
       for (const fn of listeners.error || []) fn({ type: 'error' })
@@ -138,6 +142,19 @@ function createHost(init = {}) {
   const registry = { byId: new Map(), nodes: [], scripts: [] }
   const windowListeners = []
   const documentListeners = []
+  const preloadedSrcs = []
+  class MockImage {
+    constructor() {
+      this._src = ''
+    }
+    set src(value) {
+      this._src = String(value)
+      preloadedSrcs.push(this._src)
+    }
+    get src() {
+      return this._src
+    }
+  }
   const location = {
     hostname: 'weijianjun.me',
     hash: '',
@@ -164,6 +181,7 @@ function createHost(init = {}) {
     },
     document: {
       visibilityState: init.visibilityState || 'visible',
+      readyState: init.readyState || 'loading',
       get cookie() {
         return cookie
       },
@@ -213,6 +231,10 @@ function createHost(init = {}) {
       },
     },
     copied,
+    preloadedSrcs,
+    Image: Object.prototype.hasOwnProperty.call(init, 'Image') ? init.Image : MockImage,
+    requestIdleCallback: init.requestIdleCallback,
+    cancelIdleCallback: init.cancelIdleCallback,
     addEventListener(type, fn) {
       windowListeners.push([type, fn])
     },
@@ -789,8 +811,11 @@ test('openChat opens contact card with mailto, copy, and wechat onerror fallback
   assert.equal(findAction(host, 'copy-email').textContent, '已复制')
 
   const qr = findField(host, 'wechat-qr')
-  assert.equal(qr.src, '/contact/wechat-qr.jpg')
+  assert.equal(qr.src, '/contact/wechat-qr.webp')
   assert.doesNotMatch(qr.src, /mini-qr/)
+  qr.triggerError()
+  assert.equal(qr.src, '/contact/wechat-qr.jpg')
+  assert.equal(qr.hidden, false)
   qr.triggerError()
   assert.equal(qr.hidden, true)
   const placeholder = findField(host, 'wechat-placeholder')
@@ -818,11 +843,130 @@ test('wechat qr jpg exists on both sites and both dist trees with identical SHA-
   const hashes = []
   for (const rel of files) {
     const data = await readFile(new URL(rel, import.meta.url))
+    assert.equal(data.length, 178898, `${rel} jpg size must stay 178898`)
     assert.equal(data[0], 0xff, `${rel} must be a JPEG`)
     assert.equal(data[1], 0xd8, `${rel} must be a JPEG`)
-    hashes.push(createHash('sha256').update(data).digest('hex'))
+    hashes.push(createHash('sha256').update(data).digest('hex').toUpperCase())
   }
   assert.equal(new Set(hashes).size, 1)
+  assert.equal(hashes[0], '7FD614ABE07A34F905F561F3FDD6E4969EC6B98B3BAD00F636934C13CA94B53C')
+})
+
+test('wechat qr webp exists on both sites and both dist trees, identical and lighter than jpg', async () => {
+  const files = [
+    '../public/contact/wechat-qr.webp',
+    '../work/public/contact/wechat-qr.webp',
+    '../dist/contact/wechat-qr.webp',
+    '../dist-work/contact/wechat-qr.webp',
+  ]
+  const hashes = []
+  const sizes = []
+  for (const rel of files) {
+    const data = await readFile(new URL(rel, import.meta.url))
+    assert.ok(data.length < 40 * 1024, `${rel} must stay under 40KB, got ${data.length}`)
+    assert.ok(data.length < 178898 / 2, `${rel} must be substantially smaller than jpg`)
+    assert.equal(data[0], 0x52, `${rel} must be a WebP`)
+    assert.equal(String.fromCharCode(...data.slice(0, 4)), 'RIFF')
+    hashes.push(createHash('sha256').update(data).digest('hex').toUpperCase())
+    sizes.push(data.length)
+  }
+  assert.equal(new Set(hashes).size, 1)
+  assert.equal(new Set(sizes).size, 1)
+})
+
+test('non-owner visitor preloads wechat webp once after load idle, and hover does not double-fetch', () => {
+  resetVisitorWidgetForTests()
+  const host = createHost({
+    readyState: 'complete',
+    location: {
+      hostname: '127.0.0.1',
+      protocol: 'http:',
+      port: '4173',
+      search: '?visitor-preview=1',
+    },
+  })
+  const { timers } = mountWidget(host)
+  assert.deepEqual(host.preloadedSrcs, [])
+  assert.equal(getVisitorWidgetDebugState().qrPreloaded, false)
+  timers.flush(1199)
+  assert.deepEqual(host.preloadedSrcs, [])
+  timers.flush(1200)
+  assert.deepEqual(host.preloadedSrcs, ['/contact/wechat-qr.webp'])
+  assert.equal(getVisitorWidgetDebugState().qrPreloaded, true)
+  findAction(host, 'launcher').dispatch('pointerenter')
+  findAction(host, 'launcher').dispatch('focus')
+  findAction(host, 'launcher').dispatch('touchstart')
+  assert.deepEqual(host.preloadedSrcs, ['/contact/wechat-qr.webp'])
+})
+
+test('hover/focus/touch on launcher or welcome bubble preloads immediately if idle has not run', () => {
+  resetVisitorWidgetForTests()
+  const host = createHost({
+    readyState: 'loading',
+    location: {
+      hostname: '127.0.0.1',
+      protocol: 'http:',
+      port: '4173',
+      search: '?visitor-preview=1',
+    },
+  })
+  const { timers } = mountWidget(host)
+  assert.deepEqual(host.preloadedSrcs, [])
+  findAction(host, 'launcher').dispatch('pointerenter')
+  assert.deepEqual(host.preloadedSrcs, ['/contact/wechat-qr.webp'])
+  timers.flush(2500)
+  const bubble = host.document.getElementById('wjj-welcome-bubble')
+  assert.ok(bubble)
+  bubble.dispatch('focus')
+  bubble.dispatch('touchstart')
+  host.emit('window', 'load', { type: 'load' })
+  timers.flush(1200)
+  assert.deepEqual(host.preloadedSrcs, ['/contact/wechat-qr.webp'])
+})
+
+test('requestIdleCallback path preloads once with timeout 2500', () => {
+  resetVisitorWidgetForTests()
+  let idleFn
+  let idleOpts
+  const host = createHost({
+    readyState: 'complete',
+    location: {
+      hostname: '127.0.0.1',
+      protocol: 'http:',
+      port: '4173',
+      search: '?visitor-preview=1',
+    },
+    requestIdleCallback(fn, opts) {
+      idleFn = fn
+      idleOpts = opts
+      return 7
+    },
+  })
+  mountWidget(host)
+  assert.equal(idleOpts.timeout, 2500)
+  assert.deepEqual(host.preloadedSrcs, [])
+  idleFn()
+  assert.deepEqual(host.preloadedSrcs, ['/contact/wechat-qr.webp'])
+  idleFn()
+  assert.equal(host.preloadedSrcs.length, 1)
+})
+
+test('owner exclude never preloads qr and injects no contact UI', () => {
+  resetVisitorWidgetForTests()
+  const host = createHost({
+    readyState: 'complete',
+    location: { hostname: 'weijianjun.me', hash: '#owner-exclude', protocol: 'https:' },
+  })
+  const { timers, result } = mountWidget(host, BAIDU)
+  timers.flush(2500)
+  host.emit('window', 'load', { type: 'load' })
+  timers.flush(1200)
+  assert.equal(result.mounted, false)
+  assert.deepEqual(host.preloadedSrcs, [])
+  assert.equal(getVisitorWidgetDebugState().qrPreloaded, false)
+  assert.equal(host.document.getElementById(CONTACT_LAUNCHER_ID), null)
+  assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
+  assert.equal(host.document.getElementById(CONTACT_CARD_ID), null)
 })
 
 test('source, env, workflow and built html have zero tawk/pop800 residue and no static remote scripts', async () => {
