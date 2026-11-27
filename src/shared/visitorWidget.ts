@@ -1,6 +1,8 @@
 import {
   WELCOME_FALLBACK_MS,
-  decideTawkLoad,
+  decideVisitorAdapter,
+  hasPreviewQuery,
+  isLoopbackHost,
   isOwnerExcluded,
   isWelcomeShown,
   markWelcomeShown,
@@ -13,13 +15,24 @@ import {
   type PersistIo,
   type ProjectId,
   type StorageLike,
+  type VisitorAdapterId,
 } from './ownerExclude.ts'
+import {
+  RECEIPT_ID,
+  createNoneAdapter,
+  createPop800Adapter,
+  createPreviewAdapter,
+  type ProjectCtx,
+  type VisitorChatAdapter,
+  type VisitorHostLike,
+} from './visitorAdapter.ts'
 
 export {
-  decideTawkLoad,
+  decideVisitorAdapter,
   isLoopbackHost,
   isOwnerExcluded,
-  isValidTawkId,
+  isValidPop800JobNo,
+  isValidPop800Ukey,
   isWelcomeShown,
   markWelcomeShown,
   parseOwnerHash,
@@ -29,14 +42,17 @@ export {
   setOwnerExcluded,
 } from './ownerExclude.ts'
 
+export { createNoneAdapter, createPop800Adapter, createPreviewAdapter } from './visitorAdapter.ts'
+export type { ProjectCtx, VisitorChatAdapter } from './visitorAdapter.ts'
+
 const OWNER_BAR_ID = 'wjj-owner-status'
 const BUBBLE_ID = 'wjj-welcome-bubble'
 const STYLE_ID = 'wjj-visitor-widget-style'
-const SCRIPT_ATTR = 'data-wjj-tawk'
 
 const WIDGET_CSS = `
 #wjj-owner-status,
-#wjj-welcome-bubble {
+#wjj-welcome-bubble,
+#wjj-visitor-receipt {
   font-family: var(--font-sans, 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif);
   color: var(--ink-primary, #f0f5ff);
   -webkit-font-smoothing: antialiased;
@@ -59,7 +75,8 @@ const WIDGET_CSS = `
 #wjj-owner-status strong { color: #f0f5ff; }
 #wjj-owner-status .wjj-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 #wjj-owner-status button,
-#wjj-welcome-bubble button {
+#wjj-welcome-bubble button,
+#wjj-visitor-receipt button {
   cursor: pointer;
   border-radius: 10px;
   font-size: 13px;
@@ -76,7 +93,8 @@ const WIDGET_CSS = `
   font-size: 13px;
   font-weight: 600;
 }
-#wjj-welcome-bubble {
+#wjj-welcome-bubble,
+#wjj-visitor-receipt {
   position: fixed;
   left: 16px;
   bottom: 16px;
@@ -89,7 +107,11 @@ const WIDGET_CSS = `
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 40px -24px rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(16px);
 }
-#wjj-welcome-bubble p { margin: 0 20px 12px 0; font-size: 14px; line-height: 1.55; color: #d5e2f5; }
+#wjj-welcome-bubble p,
+#wjj-visitor-receipt p { margin: 0 20px 12px 0; font-size: 14px; line-height: 1.55; color: #d5e2f5; }
+#wjj-visitor-receipt dl { margin: 0 20px 12px 0; }
+#wjj-visitor-receipt dt { font-size: 11px; letter-spacing: 0.04em; color: #6f84a8; }
+#wjj-visitor-receipt dd { margin: 0 0 8px; font-size: 13px; color: #f0f5ff; }
 #wjj-welcome-bubble .wjj-row { display: flex; gap: 8px; }
 #wjj-welcome-bubble [data-action="chat"] {
   padding: 8px 14px;
@@ -97,7 +119,8 @@ const WIDGET_CSS = `
   background: linear-gradient(135deg, #52eeff 0%, #38bdf8 48%, #5b82ff 100%);
   color: #030712;
 }
-#wjj-welcome-bubble [data-action="close"] {
+#wjj-welcome-bubble [data-action="close"],
+#wjj-visitor-receipt [data-action="close"] {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -108,24 +131,11 @@ const WIDGET_CSS = `
   color: #6f84a8;
 }
 @media (prefers-reduced-motion: reduce) {
-  #wjj-owner-status, #wjj-welcome-bubble { backdrop-filter: none; }
+  #wjj-owner-status, #wjj-welcome-bubble, #wjj-visitor-receipt { backdrop-filter: none; }
 }
 `
 
-export type TawkApi = {
-  onLoad?: () => void
-  onStatusChange?: (status: string) => void
-  onChatMaximized?: () => void
-  onChatStarted?: () => void
-  onChatMessageSystem?: (...args: unknown[]) => void
-  onChatMessageAgent?: (...args: unknown[]) => void
-  addEvent?: (name: string, meta?: Record<string, string>, cb?: () => void) => void
-  maximize?: () => void
-  hideWidget?: () => void
-  getStatus?: () => string
-}
-
-export type VisitorHost = {
+export type VisitorHost = VisitorHostLike & {
   location: {
     hostname: string
     hash: string
@@ -139,14 +149,9 @@ export type VisitorHost = {
     state?: unknown
     replaceState: (data: unknown, unused: string, url?: string) => void
   }
-  document: {
+  document: VisitorHostLike['document'] & {
     cookie: string
     visibilityState: string
-    body?: { appendChild: (node: unknown) => unknown; removeChild: (node: unknown) => unknown }
-    documentElement?: { appendChild: (node: unknown) => unknown }
-    createElement: (tag: string) => WidgetEl
-    getElementById: (id: string) => WidgetEl | null
-    querySelector: (sel: string) => WidgetEl | null
     addEventListener: (type: string, listener: EventListener) => void
     removeEventListener: (type: string, listener: EventListener) => void
   }
@@ -154,34 +159,13 @@ export type VisitorHost = {
   sessionStorage?: StorageLike | null
   addEventListener: (type: string, listener: EventListener) => void
   removeEventListener: (type: string, listener: EventListener) => void
-  Tawk_API?: TawkApi
-  Tawk_LoadStart?: Date
-}
-
-type WidgetEl = {
-  id?: string
-  src?: string
-  async?: boolean
-  charset?: string
-  textContent?: string
-  innerHTML?: string
-  style?: Record<string, string>
-  href?: string
-  rel?: string
-  target?: string
-  type?: string
-  setAttribute: (name: string, value: string) => void
-  getAttribute?: (name: string) => string | null
-  appendChild: (node: unknown) => unknown
-  addEventListener: (type: string, listener: EventListener) => void
-  querySelector?: (sel: string) => WidgetEl | null
 }
 
 export type VisitorWidgetOptions = {
   site: 'main' | 'work'
   host?: VisitorHost
-  propertyId?: string
-  widgetId?: string
+  jobNo?: string
+  ukey?: string
   fallbackDelayMs?: number
   setTimeoutFn?: typeof setTimeout
   clearTimeoutFn?: typeof clearTimeout
@@ -194,13 +178,14 @@ type SanitizedEvent = { site: 'main' | 'work'; path: string; project?: ProjectId
 type TimerHandle = ReturnType<typeof setTimeout>
 
 let started = false
-let injected = false
+let mounted = false
+let adapterId: VisitorAdapterId = 'none'
+let adapter: VisitorChatAdapter = createNoneAdapter()
 let siteKind: 'main' | 'work' = 'main'
 let hostRef: VisitorHost | null = null
 let lastPathKey = ''
-let pendingEvent: SanitizedEvent | null = null
+let lastEvent: SanitizedEvent | null = null
 let fallbackTimer: TimerHandle | null = null
-let lastStatus = ''
 let fallbackDelay = WELCOME_FALLBACK_MS
 let setTimeoutFn: typeof setTimeout = setTimeout
 let clearTimeoutFn: typeof clearTimeout = clearTimeout
@@ -212,7 +197,7 @@ const attached: Array<{
   fn: EventListener
 }> = []
 
-function envId(name: 'VITE_TAWK_PROPERTY_ID' | 'VITE_TAWK_WIDGET_ID'): string {
+function envValue(name: 'VITE_POP800_JOB_NO' | 'VITE_POP800_UKEY'): string {
   try {
     const value = import.meta.env?.[name]
     return typeof value === 'string' ? value : ''
@@ -271,16 +256,60 @@ function removeEl(host: VisitorHost, id: string) {
   }
 }
 
+function fieldEl(host: VisitorHost, tag: string, name: string, text: string) {
+  const el = host.document.createElement(tag)
+  el.setAttribute(`data-field`, name)
+  el.textContent = text
+  return el
+}
+
+function showReceipt(host: VisitorHost, ctx: ProjectCtx, status: string) {
+  ensureStyle(host)
+  removeEl(host, RECEIPT_ID)
+  const panel = host.document.createElement('div')
+  panel.id = RECEIPT_ID
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-label', '回聊预览')
+
+  const close = host.document.createElement('button')
+  close.type = 'button'
+  close.setAttribute('data-action', 'close')
+  close.setAttribute('aria-label', '关闭')
+  close.textContent = '×'
+  close.addEventListener('click', () => removeEl(host, RECEIPT_ID))
+  panel.appendChild(close)
+
+  const title = host.document.createElement('p')
+  title.textContent = '本地预览回执'
+  panel.appendChild(title)
+
+  const dl = host.document.createElement('dl')
+  dl.appendChild(fieldEl(host, 'dt', 'site-label', '站点'))
+  dl.appendChild(fieldEl(host, 'dd', 'site', ctx.site))
+  dl.appendChild(fieldEl(host, 'dt', 'path-label', '路径'))
+  dl.appendChild(fieldEl(host, 'dd', 'path', ctx.path))
+  dl.appendChild(fieldEl(host, 'dt', 'project-label', '项目'))
+  dl.appendChild(fieldEl(host, 'dd', 'project', ctx.project || '（未指定）'))
+  dl.appendChild(fieldEl(host, 'dt', 'status-label', '状态'))
+  dl.appendChild(fieldEl(host, 'dd', 'status', status))
+  panel.appendChild(dl)
+
+  host.document.body?.appendChild(panel)
+}
+
+function receiptHelpers(host: VisitorHost) {
+  return {
+    ensureStyle: () => ensureStyle(host),
+    removeEl: (id: string) => removeEl(host, id),
+    showReceipt: (ctx: ProjectCtx, status: string) => showReceipt(host, ctx, status),
+  }
+}
+
 function stopLiveVisitorSurface(host: VisitorHost) {
   cancelFallbackTimer()
   hideWelcomeBubble(host)
-  pendingEvent = null
-  if (!injected) return
-  try {
-    host.Tawk_API?.hideWidget?.()
-  } catch {
-    // tawk 未就绪或 hideWidget 抛错时静默
-  }
+  lastEvent = null
+  adapter.stop()
 }
 
 function applyOwnerExclusion(host: VisitorHost, excluded: boolean) {
@@ -311,13 +340,13 @@ function showOwnerStatusBar(host: VisitorHost) {
   bar.setAttribute('role', 'status')
 
   const status = host.document.createElement('p')
-  if (excluded && injected) {
+  if (excluded && mounted && adapterId === 'pop800') {
     status.innerHTML =
-      '<strong>站长排除已开启</strong> · tawk.to 不会加载，也不会产生访问记录。当前页此前已加载组件，请刷新一次页面以彻底断开连接。'
+      '<strong>站长排除已开启</strong> · 访客回聊通道不会加载，也不会产生访问记录。当前页此前已激活外部通道，请刷新一次页面以彻底断开连接。'
   } else if (excluded) {
-    status.innerHTML = '<strong>站长排除已开启</strong> · tawk.to 不会加载，也不会产生访问记录。'
+    status.innerHTML = '<strong>站长排除已开启</strong> · 访客回聊通道不会加载，也不会产生访问记录。'
   } else {
-    status.innerHTML = '<strong>站长排除未开启</strong> · 当前浏览器会按访客计入 tawk.to。'
+    status.innerHTML = '<strong>站长排除未开启</strong> · 当前浏览器会按访客处理（已配置通道时提供回聊入口）。'
   }
   bar.appendChild(status)
 
@@ -370,27 +399,48 @@ function cancelFallbackTimer() {
   }
 }
 
-function shouldOfferFallback(host: VisitorHost): boolean {
+function hasInteractiveChannel(): boolean {
+  return adapterId === 'pop800' || adapterId === 'preview'
+}
+
+function shouldOfferWelcome(host: VisitorHost): boolean {
   const io = ioFromHost(host)
   if (isOwnerExcluded(io) || isWelcomeShown(io)) return false
   if (host.document.visibilityState !== 'visible') return false
-  const status = lastStatus.toLowerCase()
-  return status === 'offline' || status === 'away'
+  if (!hasInteractiveChannel()) return false
+  return true
 }
 
-function scheduleFallback(host: VisitorHost) {
+function scheduleWelcome(host: VisitorHost) {
   cancelFallbackTimer()
-  if (!shouldOfferFallback(host)) return
+  if (!shouldOfferWelcome(host)) return
   fallbackTimer = setTimeoutFn(() => {
     fallbackTimer = null
-    if (!shouldOfferFallback(host)) return
+    if (!shouldOfferWelcome(host)) return
     showWelcomeBubble(host)
   }, fallbackDelay) as TimerHandle
+}
+
+function currentCtx(host: VisitorHost): ProjectCtx {
+  if (lastEvent) return lastEvent
+  if (siteKind === 'main') {
+    const project = resolveMainProjectId(host.location.hash)
+    return sanitizeVisitorEvent({
+      site: 'main',
+      path: project ? `/#${project}` : host.location.pathname || '/',
+      projectId: project,
+    })
+  }
+  return sanitizeVisitorEvent({
+    site: 'work',
+    path: host.location.pathname || '/',
+  })
 }
 
 function showWelcomeBubble(host: VisitorHost) {
   const io = ioFromHost(host)
   if (isOwnerExcluded(io) || isWelcomeShown(io)) return
+  if (!hasInteractiveChannel()) return
   if (host.document.getElementById(BUBBLE_ID)) return
   ensureStyle(host)
   markWelcomeShown(io)
@@ -409,7 +459,7 @@ function showWelcomeBubble(host: VisitorHost) {
   bubble.appendChild(close)
 
   const copy = host.document.createElement('p')
-  copy.textContent = '你好，正在看哪个项目？有想了解的细节可以直接聊或留言。'
+  copy.textContent = '你好，正在看哪个项目？有想了解的细节可以直接聊聊或留言。'
   bubble.appendChild(copy)
 
   const row = host.document.createElement('div')
@@ -420,11 +470,7 @@ function showWelcomeBubble(host: VisitorHost) {
   chat.textContent = '聊聊 / 留言'
   chat.addEventListener('click', () => {
     hideWelcomeBubble(host)
-    try {
-      host.Tawk_API?.maximize?.()
-    } catch {
-      // 离线留言框由 tawk 自身打开；失败时静默
-    }
+    adapter.openChat(currentCtx(host))
   })
   row.appendChild(chat)
   bubble.appendChild(row)
@@ -433,52 +479,6 @@ function showWelcomeBubble(host: VisitorHost) {
 
 function hideWelcomeBubble(host: VisitorHost) {
   removeEl(host, BUBBLE_ID)
-}
-
-function acknowledgeNativeWelcome(host: VisitorHost) {
-  markWelcomeShown(ioFromHost(host))
-  cancelFallbackTimer()
-  hideWelcomeBubble(host)
-}
-
-function bindTawk(host: VisitorHost) {
-  const api: TawkApi = host.Tawk_API || {}
-  host.Tawk_API = api
-  host.Tawk_LoadStart = new Date()
-
-  api.onLoad = () => {
-    if (typeof api.getStatus === 'function') {
-      lastStatus = api.getStatus() || lastStatus
-      if (lastStatus.toLowerCase() === 'offline' || lastStatus.toLowerCase() === 'away') {
-        scheduleFallback(host)
-      }
-    }
-    flushPendingEvent()
-  }
-  api.onStatusChange = (status: string) => {
-    lastStatus = status || ''
-    const normalized = lastStatus.toLowerCase()
-    if (normalized === 'offline' || normalized === 'away') scheduleFallback(host)
-    else cancelFallbackTimer()
-  }
-  api.onChatMaximized = () => acknowledgeNativeWelcome(host)
-  api.onChatStarted = () => acknowledgeNativeWelcome(host)
-  api.onChatMessageSystem = () => acknowledgeNativeWelcome(host)
-  api.onChatMessageAgent = () => acknowledgeNativeWelcome(host)
-}
-
-function injectTawkScript(host: VisitorHost, propertyId: string, widgetId: string): boolean {
-  const doc = host.document
-  if (doc.querySelector(`script[${SCRIPT_ATTR}="1"]`)) return false
-  const el = doc.createElement('script')
-  el.async = true
-  el.charset = 'UTF-8'
-  el.src = `https://embed.tawk.to/${propertyId}/${widgetId}`
-  el.setAttribute('crossorigin', '*')
-  el.setAttribute(SCRIPT_ATTR, '1')
-  const parent = doc.body || doc.documentElement
-  parent?.appendChild(el)
-  return true
 }
 
 function emitMainRoute(host: VisitorHost) {
@@ -491,17 +491,19 @@ function emitMainRoute(host: VisitorHost) {
   })
 }
 
-function flushPendingEvent() {
-  if (!pendingEvent || !hostRef?.Tawk_API?.addEvent) return
-  const payload = pendingEvent
-  const meta: Record<string, string> = { site: payload.site, path: payload.path }
-  if (payload.project) meta.project = payload.project
-  try {
-    hostRef.Tawk_API.addEvent('project_view', meta)
-    pendingEvent = null
-  } catch {
-    // 保留 pending，待下次 onLoad 再发
+function buildAdapter(
+  host: VisitorHost,
+  id: VisitorAdapterId,
+  creds: { jobNo: string; ukey: string },
+): VisitorChatAdapter {
+  const helpers = receiptHelpers(host)
+  if (id === 'preview') return createPreviewAdapter(helpers)
+  if (id === 'pop800') {
+    const allowThirdPartyScript =
+      !isLoopbackHost(host.location.hostname) || hasPreviewQuery(host.location.search)
+    return createPop800Adapter(host, creds, helpers, { allowThirdPartyScript })
   }
+  return createNoneAdapter()
 }
 
 export function notifyVisitorRouteChange(input: {
@@ -515,16 +517,17 @@ export function notifyVisitorRouteChange(input: {
   const key = `${event.site}:${event.path}`
   if (key === lastPathKey) return
   lastPathKey = key
-  pendingEvent = event
-  flushPendingEvent()
+  lastEvent = event
+  adapter.notifyRouteChange(event)
 }
 
 export function setupVisitorWidget(options: VisitorWidgetOptions): {
-  injected: boolean
+  adapter: VisitorAdapterId
+  mounted: boolean
   reason?: string
 } {
   if (started && !options.host) {
-    return { injected, reason: injected ? undefined : 'already-initialized' }
+    return { adapter: adapterId, mounted, reason: mounted ? undefined : 'already-initialized' }
   }
   if (started && options.host) resetVisitorWidgetForTests()
 
@@ -548,37 +551,41 @@ export function setupVisitorWidget(options: VisitorWidgetOptions): {
     const key = (event as KeyboardEvent).key
     if (key !== 'Escape') return
     removeEl(host, OWNER_BAR_ID)
-    if (host.document.getElementById(BUBBLE_ID)) {
-      hideWelcomeBubble(host)
-    }
+    if (host.document.getElementById(BUBBLE_ID)) hideWelcomeBubble(host)
+    if (host.document.getElementById(RECEIPT_ID)) removeEl(host, RECEIPT_ID)
   })
 
   const io = ioFromHost(host)
-  const propertyId = options.propertyId ?? envId('VITE_TAWK_PROPERTY_ID')
-  const widgetId = options.widgetId ?? envId('VITE_TAWK_WIDGET_ID')
-  const decision = decideTawkLoad({
+  const jobNo = options.jobNo ?? envValue('VITE_POP800_JOB_NO')
+  const ukey = options.ukey ?? envValue('VITE_POP800_UKEY')
+  const decision = decideVisitorAdapter({
     ownerExcluded: isOwnerExcluded(io),
     hostname: host.location.hostname,
     search: host.location.search,
-    propertyId,
-    widgetId,
+    jobNo,
+    ukey,
   })
 
-  if (!decision.load) {
-    injected = false
+  adapterId = decision.adapter
+  adapter = buildAdapter(host, adapterId, { jobNo, ukey })
+
+  if (decision.adapter === 'none') {
+    mounted = false
     if (siteKind === 'main') emitMainRoute(host)
-    return { injected: false, reason: decision.reason }
+    return { adapter: 'none', mounted: false, reason: decision.reason }
   }
 
   listen(host.document, 'visibilitychange', () => {
     if (host.document.visibilityState !== 'visible') cancelFallbackTimer()
-    else scheduleFallback(host)
+    else scheduleWelcome(host)
   })
 
-  bindTawk(host)
-  injected = injectTawkScript(host, propertyId, widgetId)
+  const initialCtx = currentCtx(host)
+  adapter.mount(initialCtx)
+  mounted = true
   if (siteKind === 'main') emitMainRoute(host)
-  return { injected: true }
+  scheduleWelcome(host)
+  return { adapter: adapterId, mounted: true }
 }
 
 export function resetVisitorWidgetForTests(): void {
@@ -590,29 +597,31 @@ export function resetVisitorWidgetForTests(): void {
       // mock 可能无 removeEventListener 实现
     }
   }
+  adapter.stop()
   started = false
-  injected = false
+  mounted = false
+  adapterId = 'none'
+  adapter = createNoneAdapter()
   hostRef = null
   lastPathKey = ''
-  pendingEvent = null
-  lastStatus = ''
+  lastEvent = null
   fallbackDelay = WELCOME_FALLBACK_MS
   setTimeoutFn = setTimeout
   clearTimeoutFn = clearTimeout
 }
 
 export function getVisitorWidgetDebugState(): {
-  injected: boolean
+  adapter: VisitorAdapterId
+  mounted: boolean
   lastPathKey: string
-  pendingEvent: SanitizedEvent | null
-  lastStatus: string
+  lastEvent: SanitizedEvent | null
   hasFallbackTimer: boolean
 } {
   return {
-    injected,
+    adapter: adapterId,
+    mounted,
     lastPathKey,
-    pendingEvent,
-    lastStatus,
+    lastEvent,
     hasFallbackTimer: fallbackTimer != null,
   }
 }

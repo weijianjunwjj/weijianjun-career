@@ -7,8 +7,10 @@ export const WELCOME_STORAGE_KEY = 'wjj.welcome_shown'
 export const FLAG_VALUE = '1'
 export const OWNER_COOKIE_MAX_AGE = 31536000
 export const ROOT_COOKIE_DOMAIN = '.weijianjun.me'
-export const TAWK_ID_PATTERN = /^[a-zA-Z0-9_-]+$/
+export const POP800_JOB_NO_PATTERN = /^\d+$/
+export const POP800_UKEY_PATTERN = /^[a-zA-Z0-9]+$/
 export const WELCOME_FALLBACK_MS = 4000
+export const PREVIEW_QUERY = 'visitor-preview'
 
 export const PROJECT_WHITELIST = [
   'courier',
@@ -20,8 +22,11 @@ export const PROJECT_WHITELIST = [
 
 export type ProjectId = (typeof PROJECT_WHITELIST)[number]
 export type OwnerHashAction = 'exclude' | 'include' | 'status'
-export type TawkSkipReason = 'owner' | 'loopback' | 'invalid-id'
-export type TawkLoadDecision = { load: true } | { load: false; reason: TawkSkipReason }
+export type VisitorAdapterId = 'none' | 'pop800' | 'preview'
+export type VisitorSkipReason = 'owner' | 'loopback' | 'none'
+export type VisitorAdapterDecision =
+  | { adapter: 'pop800' | 'preview' }
+  | { adapter: 'none'; reason: VisitorSkipReason }
 
 export type StorageLike = {
   getItem(key: string): string | null
@@ -52,13 +57,17 @@ export function isWeijianjunHost(hostname: string): boolean {
   return host === 'weijianjun.me' || host.endsWith('.weijianjun.me')
 }
 
-export function isValidTawkId(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0 && TAWK_ID_PATTERN.test(value)
+export function isValidPop800JobNo(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 16 && POP800_JOB_NO_PATTERN.test(value)
+}
+
+export function isValidPop800Ukey(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= 64 && POP800_UKEY_PATTERN.test(value)
 }
 
 export function hasPreviewQuery(search: string): boolean {
   const raw = search.startsWith('?') ? search.slice(1) : search
-  return new URLSearchParams(raw).get('tawk-preview') === '1'
+  return new URLSearchParams(raw).get(PREVIEW_QUERY) === '1'
 }
 
 export function parseOwnerHash(hash: string): OwnerHashAction | null {
@@ -175,21 +184,22 @@ export function markWelcomeShown(io: PersistIo): void {
   writeStorageFlag(io.sessionStorage, WELCOME_STORAGE_KEY, true)
 }
 
-export function decideTawkLoad(input: {
+export function decideVisitorAdapter(input: {
   ownerExcluded: boolean
   hostname: string
   search: string
-  propertyId: unknown
-  widgetId: unknown
-}): TawkLoadDecision {
-  if (input.ownerExcluded) return { load: false, reason: 'owner' }
+  jobNo: unknown
+  ukey: unknown
+}): VisitorAdapterDecision {
+  if (input.ownerExcluded) return { adapter: 'none', reason: 'owner' }
   if (isLoopbackHost(input.hostname) && !hasPreviewQuery(input.search)) {
-    return { load: false, reason: 'loopback' }
+    return { adapter: 'none', reason: 'loopback' }
   }
-  if (!isValidTawkId(input.propertyId) || !isValidTawkId(input.widgetId)) {
-    return { load: false, reason: 'invalid-id' }
+  if (isValidPop800JobNo(input.jobNo) && isValidPop800Ukey(input.ukey)) {
+    return { adapter: 'pop800' }
   }
-  return { load: true }
+  if (hasPreviewQuery(input.search)) return { adapter: 'preview' }
+  return { adapter: 'none', reason: 'none' }
 }
 
 export function stripHashFromUrl(pathname: string, search = ''): string {

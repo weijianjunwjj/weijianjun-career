@@ -43,8 +43,8 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
           VITE_SITE_URL: https://weijianjun.me/
-          VITE_TAWK_PROPERTY_ID: ${{ vars.VITE_TAWK_PROPERTY_ID }}
-          VITE_TAWK_WIDGET_ID: ${{ vars.VITE_TAWK_WIDGET_ID }}
+          VITE_POP800_JOB_NO: ${{ vars.VITE_POP800_JOB_NO }}
+          VITE_POP800_UKEY: ${{ vars.VITE_POP800_UKEY }}
           # Uploads hidden source maps to Sentry, then deletes them before publishing.
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: pnpm build:all

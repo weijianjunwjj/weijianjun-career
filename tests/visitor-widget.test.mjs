@@ -1,17 +1,20 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   OWNER_COOKIE,
   OWNER_STORAGE_KEY,
   WELCOME_COOKIE,
   WELCOME_STORAGE_KEY,
   buildFlagCookie,
-  decideTawkLoad,
+  decideVisitorAdapter,
   hasPreviewQuery,
   isLoopbackHost,
   isOwnerExcluded,
-  isValidTawkId,
+  isValidPop800JobNo,
+  isValidPop800Ukey,
   isWelcomeShown,
   markWelcomeShown,
   parseOwnerHash,
@@ -21,6 +24,7 @@ import {
   sanitizeVisitorPath,
   setOwnerExcluded,
 } from '../src/shared/ownerExclude.ts'
+import { POP800_SCRIPT_ATTR, POP800_SLOT_ID, RECEIPT_ID } from '../src/shared/visitorAdapter.ts'
 import {
   getVisitorWidgetDebugState,
   notifyVisitorRouteChange,
@@ -135,7 +139,6 @@ function createHost(init = {}) {
         const parsed = new URL(url, `${location.protocol}//${location.hostname}${location.pathname}`)
         location.pathname = parsed.pathname
         location.search = parsed.search
-        // 标准浏览器：replaceState 同步 location.hash；无 hash 时为 ''
         location.hash = parsed.hash || ''
         location.href = parsed.toString()
       },
@@ -157,8 +160,8 @@ function createHost(init = {}) {
         return registry.byId.get(id) || null
       },
       querySelector(sel) {
-        if (sel.includes('data-wjj-tawk')) {
-          return registry.scripts.find((el) => el.getAttribute('data-wjj-tawk') === '1') || null
+        if (sel.includes(POP800_SCRIPT_ATTR)) {
+          return registry.scripts.find((el) => el.getAttribute(POP800_SCRIPT_ATTR) === '1') || null
         }
         return null
       },
@@ -189,7 +192,7 @@ function createHost(init = {}) {
       const idx = windowListeners.findIndex((item) => item[0] === type && item[1] === fn)
       if (idx >= 0) windowListeners.splice(idx, 1)
     },
-    Tawk_API: init.Tawk_API,
+    POP800: init.POP800,
     registry,
     emit(target, type, event) {
       const list = target === 'window' ? windowListeners : documentListeners
@@ -225,15 +228,15 @@ function createTimers() {
   }
 }
 
-const VALID_IDS = { propertyId: 'abcDEF123', widgetId: 'widget_01' }
+const POP800 = { jobNo: '123456', ukey: 'abcDEF99' }
 
 function mountWidget(host, extra = {}) {
   const timers = extra.timers || createTimers()
   const result = setupVisitorWidget({
     site: extra.site || 'main',
     host,
-    propertyId: extra.propertyId ?? VALID_IDS.propertyId,
-    widgetId: extra.widgetId ?? VALID_IDS.widgetId,
+    jobNo: extra.jobNo,
+    ukey: extra.ukey,
     fallbackDelayMs: extra.fallbackDelayMs ?? 4000,
     setTimeoutFn: timers.setTimeout,
     clearTimeoutFn: timers.clearTimeout,
@@ -241,17 +244,48 @@ function mountWidget(host, extra = {}) {
   return { result, timers }
 }
 
-test('loopback hosts and tawk id validation', () => {
+function findAction(host, action) {
+  return host.registry.nodes.find((node) => node.getAttribute?.('data-action') === action) || null
+}
+
+function statusBarText(host) {
+  const bar = host.document.getElementById('wjj-owner-status')
+  if (!bar) return ''
+  return bar.children.map((child) => child.innerHTML || child.textContent || '').join('\n')
+}
+
+function fieldText(host, name) {
+  const node = host.registry.nodes.find((item) => item.getAttribute?.('data-field') === name)
+  return node?.textContent || ''
+}
+
+function httpScriptSrcs(host) {
+  return host.registry.scripts.map((el) => el.src).filter((src) => /^https?:\/\//i.test(src))
+}
+
+async function collectFiles(dir) {
+  const out = []
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) out.push(...(await collectFiles(path)))
+    else out.push(path)
+  }
+  return out
+}
+
+test('loopback hosts, preview query and POP800 id validation', () => {
   assert.equal(isLoopbackHost('localhost'), true)
   assert.equal(isLoopbackHost('127.0.0.1'), true)
   assert.equal(isLoopbackHost('::1'), true)
   assert.equal(isLoopbackHost('weijianjun.me'), false)
-  assert.equal(isValidTawkId('abcDEF123'), true)
-  assert.equal(isValidTawkId('widget_01'), true)
-  assert.equal(isValidTawkId(''), false)
-  assert.equal(isValidTawkId('foo/bar'), false)
-  assert.equal(isValidTawkId('id with space'), false)
-  assert.equal(hasPreviewQuery('?tawk-preview=1'), true)
+  assert.equal(isValidPop800JobNo('123456'), true)
+  assert.equal(isValidPop800JobNo('abcDEF123'), false)
+  assert.equal(isValidPop800JobNo(''), false)
+  assert.equal(isValidPop800Ukey('abcDEF99'), true)
+  assert.equal(isValidPop800Ukey('bad/id'), false)
+  assert.equal(isValidPop800Ukey('id with space'), false)
+  assert.equal(hasPreviewQuery('?visitor-preview=1'), true)
+  assert.equal(hasPreviewQuery('?tawk-preview=1'), false)
   assert.equal(hasPreviewQuery('?foo=1'), false)
 })
 
@@ -311,54 +345,75 @@ test('owner hash parsing and unmarked visitors pass through', () => {
   assert.equal(isOwnerExcluded(io), false)
 })
 
-test('tawk load is blocked for owner, loopback and invalid ids', () => {
+test('adapter decision: owner, loopback, pop800, preview, none', () => {
   assert.deepEqual(
-    decideTawkLoad({
+    decideVisitorAdapter({
       ownerExcluded: true,
       hostname: 'weijianjun.me',
       search: '',
-      propertyId: 'abc',
-      widgetId: 'def',
+      jobNo: POP800.jobNo,
+      ukey: POP800.ukey,
     }),
-    { load: false, reason: 'owner' },
+    { adapter: 'none', reason: 'owner' },
   )
   assert.deepEqual(
-    decideTawkLoad({
+    decideVisitorAdapter({
       ownerExcluded: false,
       hostname: 'localhost',
       search: '',
-      propertyId: 'abc',
-      widgetId: 'def',
+      jobNo: POP800.jobNo,
+      ukey: POP800.ukey,
     }),
-    { load: false, reason: 'loopback' },
+    { adapter: 'none', reason: 'loopback' },
   )
   assert.equal(
-    decideTawkLoad({
+    decideVisitorAdapter({
       ownerExcluded: false,
       hostname: 'localhost',
-      search: '?tawk-preview=1',
-      propertyId: 'abc',
-      widgetId: 'def',
-    }).load,
-    true,
+      search: '?visitor-preview=1',
+      jobNo: POP800.jobNo,
+      ukey: POP800.ukey,
+    }).adapter,
+    'pop800',
+  )
+  assert.equal(
+    decideVisitorAdapter({
+      ownerExcluded: false,
+      hostname: 'localhost',
+      search: '?visitor-preview=1',
+      jobNo: '',
+      ukey: '',
+    }).adapter,
+    'preview',
   )
   assert.deepEqual(
-    decideTawkLoad({
+    decideVisitorAdapter({
       ownerExcluded: false,
       hostname: 'weijianjun.me',
       search: '',
-      propertyId: 'bad/id',
-      widgetId: 'def',
+      jobNo: 'bad/id',
+      ukey: 'def',
     }),
-    { load: false, reason: 'invalid-id' },
+    { adapter: 'none', reason: 'none' },
+  )
+  assert.equal(
+    decideVisitorAdapter({
+      ownerExcluded: false,
+      hostname: 'weijianjun.me',
+      search: '',
+      jobNo: POP800.jobNo,
+      ukey: POP800.ukey,
+    }).adapter,
+    'pop800',
   )
 })
 
-test('owner hash writes flags, strips url and never injects script', () => {
+test('owner hash writes flags, strips url and never mounts a channel', () => {
   resetVisitorWidgetForTests()
   const host = createHost({ location: { hostname: 'weijianjun.me', hash: '#owner-exclude', protocol: 'https:' } })
-  const { result } = mountWidget(host)
-  assert.equal(result.injected, false)
+  const { result } = mountWidget(host, POP800)
+  assert.equal(result.mounted, false)
+  assert.equal(result.adapter, 'none')
   assert.equal(result.reason, 'owner')
   assert.equal(host.location.hash, '')
   assert.equal(host.registry.scripts.length, 0)
@@ -367,22 +422,24 @@ test('owner hash writes flags, strips url and never injects script', () => {
   assert.ok(host.document.getElementById('wjj-owner-status'))
 })
 
-test('unmarked production visitor injects tawk script once', () => {
+test('unmarked production visitor with POP800 mounts adapter without remote script src', () => {
   resetVisitorWidgetForTests()
   const host = createHost()
-  const { result } = mountWidget(host)
-  assert.equal(result.injected, true)
-  assert.equal(host.registry.scripts.length, 1)
-  assert.equal(host.registry.scripts[0].src, 'https://embed.tawk.to/abcDEF123/widget_01')
+  const { result } = mountWidget(host, POP800)
+  assert.equal(result.mounted, true)
+  assert.equal(result.adapter, 'pop800')
+  assert.ok(host.document.getElementById(POP800_SLOT_ID))
+  assert.equal(httpScriptSrcs(host).length, 0)
 })
 
-test('loopback default skips script; preview query allows it', () => {
+test('loopback default skips channel; preview query enables local preview', () => {
   resetVisitorWidgetForTests()
   const blocked = createHost({
     location: { hostname: '127.0.0.1', protocol: 'http:', port: '5173', hash: '', search: '' },
   })
-  assert.equal(mountWidget(blocked).result.injected, false)
+  assert.equal(mountWidget(blocked, POP800).result.mounted, false)
   assert.equal(blocked.registry.scripts.length, 0)
+  assert.equal(blocked.document.getElementById(POP800_SLOT_ID), null)
 
   resetVisitorWidgetForTests()
   const preview = createHost({
@@ -390,11 +447,13 @@ test('loopback default skips script; preview query allows it', () => {
       hostname: '127.0.0.1',
       protocol: 'http:',
       port: '5173',
-      search: '?tawk-preview=1',
+      search: '?visitor-preview=1',
     },
   })
-  assert.equal(mountWidget(preview).result.injected, true)
-  assert.equal(preview.registry.scripts.length, 1)
+  const mounted = mountWidget(preview)
+  assert.equal(mounted.result.adapter, 'preview')
+  assert.equal(mounted.result.mounted, true)
+  assert.equal(httpScriptSrcs(preview).length, 0)
 })
 
 test('welcome shown cookie is session-only and shared on production domain', () => {
@@ -424,13 +483,12 @@ test('welcome shown cookie is session-only and shared on production domain', () 
   assert.equal(sessionStorage.getItem(WELCOME_STORAGE_KEY), '1')
 })
 
-test('single-visit welcome: first allowed, refresh/route/cross-site blocked, owner never', () => {
+test('single-visit welcome: first allowed, refresh/route/cross-site blocked, owner never, no empty bubble', () => {
   resetVisitorWidgetForTests()
   const storage = memoryStorage()
   const sessionStorage = memoryStorage()
   const host = createHost({ localStorage: storage, sessionStorage })
-  const { timers } = mountWidget(host)
-  host.Tawk_API.onStatusChange('offline')
+  const { timers } = mountWidget(host, POP800)
   timers.flush(4000)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
   assert.match(host.document.cookie, new RegExp(`${WELCOME_COOKIE}=1`))
@@ -441,8 +499,7 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     localStorage: storage,
     sessionStorage,
   })
-  const again = mountWidget(refreshed)
-  refreshed.Tawk_API.onStatusChange('offline')
+  const again = mountWidget(refreshed, POP800)
   again.timers.flush(4000)
   assert.equal(refreshed.document.getElementById('wjj-welcome-bubble'), null)
 
@@ -453,8 +510,7 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     sessionStorage,
     location: { hostname: 'work.weijianjun.me', protocol: 'https:', pathname: '/projects/courier' },
   })
-  const workMount = mountWidget(workHost, { site: 'work' })
-  workHost.Tawk_API.onStatusChange('offline')
+  const workMount = mountWidget(workHost, { site: 'work', ...POP800 })
   workMount.timers.flush(4000)
   assert.equal(workHost.document.getElementById('wjj-welcome-bubble'), null)
 
@@ -472,36 +528,38 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     },
     true,
   )
-  const ownerMount = mountWidget(ownerHost)
-  assert.equal(ownerMount.result.injected, false)
-  assert.equal(ownerHost.Tawk_API, undefined)
-})
+  const ownerMount = mountWidget(ownerHost, POP800)
+  assert.equal(ownerMount.result.mounted, false)
+  ownerMount.timers.flush(4000)
+  assert.equal(ownerHost.document.getElementById('wjj-welcome-bubble'), null)
 
-test('native tawk message wins over fallback bubble', () => {
   resetVisitorWidgetForTests()
-  const host = createHost()
-  const { timers } = mountWidget(host)
-  host.Tawk_API.onStatusChange('offline')
-  host.Tawk_API.onChatMessageAgent()
-  timers.flush(4000)
-  assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
-  assert.match(host.document.cookie, new RegExp(`${WELCOME_COOKIE}=1`))
+  const empty = createHost()
+  const emptyMount = mountWidget(empty)
+  assert.equal(emptyMount.result.adapter, 'none')
+  emptyMount.timers.flush(4000)
+  assert.equal(empty.document.getElementById('wjj-welcome-bubble'), null)
 })
 
-test('offline visible page shows fallback once; hidden page does not', () => {
+test('visible page shows welcome once; hidden page does not; returning visible reschedules', () => {
   resetVisitorWidgetForTests()
   const visible = createHost({ visibilityState: 'visible' })
-  const visibleMount = mountWidget(visible)
-  visible.Tawk_API.onStatusChange('offline')
+  const visibleMount = mountWidget(visible, POP800)
   visibleMount.timers.flush(4000)
   assert.ok(visible.document.getElementById('wjj-welcome-bubble'))
 
   resetVisitorWidgetForTests()
   const hidden = createHost({ visibilityState: 'hidden' })
-  const hiddenMount = mountWidget(hidden)
-  hidden.Tawk_API.onStatusChange('offline')
+  const hiddenMount = mountWidget(hidden, POP800)
   hiddenMount.timers.flush(4000)
   assert.equal(hidden.document.getElementById('wjj-welcome-bubble'), null)
+  assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
+
+  hidden.document.visibilityState = 'visible'
+  hidden.emit('document', 'visibilitychange', { type: 'visibilitychange' })
+  assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
+  hidden.document.visibilityState = 'hidden'
+  hidden.emit('document', 'visibilitychange', { type: 'visibilitychange' })
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
 })
 
@@ -523,45 +581,75 @@ test('anonymous event whitelist drops PII and unknown fields', () => {
   assert.equal(resolveWorkProjectId('/projects/lowcode/'), 'lowcode')
 })
 
-test('route notify de-dupes the same path and flushes after tawk onLoad', () => {
+test('route notify de-dupes the same path and keeps zero-PII whitelist', () => {
   resetVisitorWidgetForTests()
-  const events = []
   const host = createHost()
-  mountWidget(host, { site: 'work' })
+  mountWidget(host, { site: 'work', ...POP800 })
   notifyVisitorRouteChange({ site: 'work', path: '/projects/courier', title: 'x', projectId: 'courier' })
   notifyVisitorRouteChange({ site: 'work', path: '/projects/courier', title: 'y', projectId: 'courier' })
-  assert.equal(getVisitorWidgetDebugState().pendingEvent.path, '/projects/courier')
-  host.Tawk_API.addEvent = (name, meta) => {
-    events.push({ name, meta })
-  }
-  host.Tawk_API.onLoad()
-  notifyVisitorRouteChange({ site: 'work', path: '/projects/courier', projectId: 'courier' })
-  notifyVisitorRouteChange({ site: 'work', path: '/projects/analytics', projectId: 'analytics' })
-  assert.deepEqual(events, [
-    { name: 'project_view', meta: { site: 'work', path: '/projects/courier', project: 'courier' } },
-    { name: 'project_view', meta: { site: 'work', path: '/projects/analytics', project: 'analytics' } },
-  ])
-  assert.ok(events.every((item) => !JSON.stringify(item).includes('@')))
+  assert.deepEqual(getVisitorWidgetDebugState().lastEvent, {
+    site: 'work',
+    path: '/projects/courier',
+    project: 'courier',
+  })
+  notifyVisitorRouteChange({ site: 'work', path: '/projects/analytics', projectId: 'analytics', email: 'ada@x.com' })
+  assert.deepEqual(getVisitorWidgetDebugState().lastEvent, {
+    site: 'work',
+    path: '/projects/analytics',
+    project: 'analytics',
+  })
+  assert.ok(!JSON.stringify(getVisitorWidgetDebugState().lastEvent).includes('@'))
 })
 
-test('static html never hardcodes remote tawk scripts', async () => {
-  const files = ['../index.html', '../work/index.html']
-  for (const rel of files) {
+test('openChat carries anonymous project context into the local receipt', () => {
+  resetVisitorWidgetForTests()
+  const host = createHost({
+    location: {
+      hostname: '127.0.0.1',
+      protocol: 'http:',
+      port: '4174',
+      pathname: '/projects/lowcode/',
+      search: '?visitor-preview=1',
+    },
+  })
+  const { timers } = mountWidget(host, { site: 'work' })
+  notifyVisitorRouteChange({ site: 'work', path: '/projects/lowcode', projectId: 'lowcode' })
+  timers.flush(4000)
+  findAction(host, 'chat').click()
+  assert.ok(host.document.getElementById(RECEIPT_ID))
+  assert.equal(fieldText(host, 'site'), 'work')
+  assert.equal(fieldText(host, 'path'), '/projects/lowcode')
+  assert.equal(fieldText(host, 'project'), 'lowcode')
+  assert.equal(fieldText(host, 'status'), '回聊通道待接入')
+})
+
+test('source, env, workflow and built html have zero tawk residue and no static remote scripts', async () => {
+  const root = fileURLToPath(new URL('..', import.meta.url))
+  const files = [
+    ...(await collectFiles(join(root, 'src'))),
+    join(root, '.env.example'),
+    join(root, '.github', 'workflows', 'deploy-pages.yml'),
+    join(root, 'dist', 'index.html'),
+    join(root, 'dist-work', 'index.html'),
+  ]
+  const joined = []
+  for (const file of files) {
+    const text = await readFile(file, 'utf8')
+    joined.push(text)
+  }
+  const blob = joined.join('\n')
+  assert.doesNotMatch(blob, /tawk\.to/i)
+  assert.doesNotMatch(blob, /embed\.tawk\.to/)
+  assert.doesNotMatch(blob, /VITE_TAWK_/)
+  assert.doesNotMatch(blob, /Tawk_API/)
+
+  for (const rel of ['../index.html', '../work/index.html', '../dist/index.html', '../dist-work/index.html']) {
     const html = await readFile(new URL(rel, import.meta.url), 'utf8')
     assert.doesNotMatch(html, /src="https?:\/\//)
     assert.doesNotMatch(html, /embed\.tawk\.to/)
+    assert.doesNotMatch(html, /tawk\.to/i)
   }
 })
-
-function findAction(host, action) {
-  return host.registry.nodes.find((node) => node.getAttribute?.('data-action') === action) || null
-}
-
-function statusBarText(host) {
-  const bar = host.document.getElementById('wjj-owner-status')
-  if (!bar) return ''
-  return bar.children.map((child) => child.innerHTML || child.textContent || '').join('\n')
-}
 
 test('replaceState without writing location.hash still clears owner hash', () => {
   resetVisitorWidgetForTests()
@@ -571,56 +659,41 @@ test('replaceState without writing location.hash still clears owner hash', () =>
   assert.doesNotMatch(host.location.href, /#$/)
 })
 
-test('enabling exclude after inject cancels timer, hides bubble and widget, and asks to refresh', () => {
+test('enabling exclude after mount cancels timer, hides bubble, stops adapter, and asks to refresh', () => {
   resetVisitorWidgetForTests()
-  let hideCalls = 0
-  const host = createHost({
-    Tawk_API: {
-      hideWidget() {
-        hideCalls += 1
-      },
-    },
-  })
-  const { result, timers } = mountWidget(host)
-  assert.equal(result.injected, true)
+  const host = createHost()
+  const { result, timers } = mountWidget(host, POP800)
+  assert.equal(result.mounted, true)
   notifyVisitorRouteChange({ site: 'main', path: '/#courier', projectId: 'courier' })
-  host.Tawk_API.onStatusChange('offline')
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
   timers.flush(4000)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
+  assert.ok(host.document.getElementById(POP800_SLOT_ID))
 
   host.location.hash = '#owner-exclude'
   host.emit('window', 'hashchange', { type: 'hashchange' })
 
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
-  assert.equal(getVisitorWidgetDebugState().pendingEvent, null)
+  assert.equal(getVisitorWidgetDebugState().lastEvent, null)
   assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
-  assert.equal(hideCalls, 1)
+  assert.equal(host.document.getElementById(POP800_SLOT_ID), null)
   assert.match(statusBarText(host), /请刷新一次页面以彻底断开连接/)
   assert.equal(host.location.hash, '')
 })
 
-test('toggle exclude after inject also stops live surface; uninjected exclude does not ask to refresh', () => {
+test('toggle exclude after mount also stops live surface; unmounted exclude does not ask to refresh', () => {
   resetVisitorWidgetForTests()
-  let hideCalls = 0
-  const injectedHost = createHost({
-    Tawk_API: {
-      hideWidget() {
-        hideCalls += 1
-      },
-    },
-  })
-  const injectedMount = mountWidget(injectedHost)
-  assert.equal(injectedMount.result.injected, true)
-  injectedHost.Tawk_API.onStatusChange('offline')
+  const injectedHost = createHost()
+  const injectedMount = mountWidget(injectedHost, POP800)
+  assert.equal(injectedMount.result.mounted, true)
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
 
   injectedHost.location.hash = '#owner-status'
   injectedHost.emit('window', 'hashchange', { type: 'hashchange' })
   findAction(injectedHost, 'toggle').click()
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
-  assert.equal(getVisitorWidgetDebugState().pendingEvent, null)
-  assert.equal(hideCalls, 1)
+  assert.equal(getVisitorWidgetDebugState().lastEvent, null)
+  assert.equal(injectedHost.document.getElementById(POP800_SLOT_ID), null)
   assert.match(statusBarText(injectedHost), /请刷新一次页面以彻底断开连接/)
 
   resetVisitorWidgetForTests()
@@ -628,7 +701,7 @@ test('toggle exclude after inject also stops live surface; uninjected exclude do
     location: { hostname: '127.0.0.1', protocol: 'http:', port: '5173', hash: '', search: '' },
   })
   const skippedMount = mountWidget(skipped)
-  assert.equal(skippedMount.result.injected, false)
+  assert.equal(skippedMount.result.mounted, false)
   skipped.location.hash = '#owner-status'
   skipped.emit('window', 'hashchange', { type: 'hashchange' })
   findAction(skipped, 'toggle').click()
