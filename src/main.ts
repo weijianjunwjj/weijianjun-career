@@ -21,12 +21,21 @@ function scheduleMonitoring(app: VueApp) {
     return
   }
 
-  const ric = window.requestIdleCallback
-  if (typeof ric === 'function') {
-    ric(() => load(), { timeout: 2500 })
-  } else {
-    window.setTimeout(load, 1500)
+  const afterWindowLoad = () => {
+    const ric = window.requestIdleCallback
+    if (typeof ric === 'function') {
+      ric(() => load(), { timeout: 3000 })
+    } else {
+      window.setTimeout(load, 2000)
+    }
   }
+
+  if (document.readyState === 'complete') {
+    afterWindowLoad()
+    return
+  }
+
+  window.addEventListener('load', afterWindowLoad, { once: true })
 }
 
 if (isBrowser()) {

@@ -1,4 +1,4 @@
-export const LAZY_ROOT_MARGIN = '200px 0px'
+export const LAZY_ROOT_MARGIN = '100px 0px'
 
 type ObserverCtor = typeof IntersectionObserver
 

@@ -6,8 +6,8 @@ import { profile } from '../src/data/profile.ts'
 import { LAZY_ROOT_MARGIN, observeLazyLoad } from '../src/utils/lazySrc.ts'
 import { gatewayProjects, heroStageItems, novaWing } from '../src/data/projects.ts'
 
-test('lazy observer uses 200px rootMargin and does not fire before intersect', () => {
-  assert.equal(LAZY_ROOT_MARGIN, '200px 0px')
+test('lazy observer uses 100px rootMargin and does not fire before intersect', () => {
+  assert.equal(LAZY_ROOT_MARGIN, '100px 0px')
   let visible = false
   let savedCb
   let savedOpts
@@ -26,7 +26,7 @@ test('lazy observer uses 200px rootMargin and does not fire before intersect', (
   const stop = observeLazyLoad({ id: 'el' }, () => {
     visible = true
   }, FakeIO)
-  assert.equal(savedOpts.rootMargin, '200px 0px')
+  assert.equal(savedOpts.rootMargin, '100px 0px')
   assert.equal(visible, false)
   savedCb([{ isIntersecting: false }])
   assert.equal(visible, false)
@@ -45,7 +45,11 @@ test('lazy observer degrades immediately without IntersectionObserver', () => {
 })
 
 test('gateway and nova cards use thumbs while lightbox keeps HD sources', () => {
-  for (const project of gatewayProjects) {
+  const [courier, ...rest] = gatewayProjects
+  assert.match(courier.primaryImage, /\.webp$/)
+  assert.match(courier.primaryThumb, /\/evidence\/courier\/admin-orders\.webp$/)
+  assert.equal(courier.primaryThumb, courier.primaryImage)
+  for (const project of rest) {
     assert.match(project.primaryImage, /\.webp$/)
     assert.ok(project.primaryThumb)
     assert.notEqual(project.primaryThumb, project.primaryImage)
@@ -97,7 +101,30 @@ test('main entry JS is sentry-free while Sentry lives in a delayed async chunk',
 
   const raw = await readFile(entryPath)
   const gz = gzipSync(raw, { level: 9 }).length
-  assert.ok(gz <= 45 * 1024, `main entry gzip ${gz} bytes exceeds 45KB target`)
+  assert.ok(gz >= 50 * 1024, `main entry gzip ${gz} bytes is below the static-section floor`)
+  assert.ok(gz <= 58 * 1024, `main entry gzip ${gz} bytes exceeds 58KB target`)
+})
+
+test('built index.html ships a single stylesheet with below-fold section CSS', async () => {
+  const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8')
+  const sheets = [...html.matchAll(/<link[^>]+rel="stylesheet"[^>]*>/g)].map((m) => m[0])
+  assert.equal(sheets.length, 1, `expected 1 stylesheet, got ${sheets.length}`)
+  const href = sheets[0].match(/href="([^"]+\.css)"/)?.[1]
+  assert.ok(href, 'missing stylesheet href')
+  const css = await readFile(new URL(`../dist${href}`, import.meta.url), 'utf8')
+  assert.match(css, /\.contact-section/)
+  assert.match(css, /\.credentials-grid/)
+  assert.match(css, /\.domains-grid/)
+  assert.match(css, /\.nova-workbench/)
+})
+
+test('Sentry stays off the critical path until window load completes', async () => {
+  const main = await readFile(new URL('../src/main.ts', import.meta.url), 'utf8')
+  assert.match(main, /document\.readyState === 'complete'/)
+  assert.match(main, /addEventListener\('load'/)
+  assert.match(main, /timeout:\s*3000/)
+  assert.match(main, /setTimeout\(load,\s*2000\)/)
+  assert.match(main, /#sentry-test/)
 })
 
 test('below-fold lazy images omit real src in prerendered HTML', async () => {

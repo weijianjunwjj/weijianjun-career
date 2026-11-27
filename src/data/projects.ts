@@ -142,7 +142,7 @@ export const gatewayProjects: GatewayProject[] = [
     ],
     stack: ['微信原生小程序', '微信支付分', 'WebSocket', 'Vue 3 / Pinia'],
     primaryImage: publicAsset('evidence/courier/admin-orders.webp'),
-    primaryThumb: publicAsset('evidence/courier/admin-orders-720.webp'),
+    primaryThumb: publicAsset('evidence/courier/admin-orders.webp'),
     primaryAlt: '逍遥邮运营后台订单管理界面（Mock 数据 · 原始历史后台）',
     secondaryImage: publicAsset('evidence/courier/mini-success.webp'),
     secondaryThumb: publicAsset('evidence/courier/mini-success-720.webp'),
