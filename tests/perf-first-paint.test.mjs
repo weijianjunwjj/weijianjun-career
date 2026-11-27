@@ -145,3 +145,10 @@ test('nova preview video exists, original demo stays large, wechat qr is untouch
   const demo = await stat(new URL('../public/projects/nova-wing/demo.mp4', import.meta.url))
   assert.ok(demo.size > 70 * 1024 * 1024)
 })
+
+test('prerendered html does not put wechat qr on the first-paint critical path', async () => {
+  const html = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8')
+  const workHtml = await readFile(new URL('../dist-work/index.html', import.meta.url), 'utf8')
+  assert.doesNotMatch(html, /wechat-qr\.(webp|jpg)/)
+  assert.doesNotMatch(workHtml, /wechat-qr\.(webp|jpg)/)
+})

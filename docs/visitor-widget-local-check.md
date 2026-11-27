@@ -21,7 +21,7 @@
 
 1. 清空 Cookie / `localStorage` / `sessionStorage` 后打开 `http://127.0.0.1:4173/?visitor-preview=1`。
 2. 进站即可看到右下角霓虹胶囊「聊聊 / 联系魏建军」；约 2.5 秒后自动出现欢迎气泡（无项目文案 +「一键发邮件 / 加微信」），气泡在胶囊正上方。
-3. 点击主按钮打开联系卡：`mailto:` 指向 `2661043132@qq.com`，无 `target`；微信图 `/contact/wechat-qr.jpg` 解码成功（888×1131），占位隐藏，未使用 `mini-qr.png`。
+3. 点击主按钮打开联系卡：`mailto:` 指向 `2661043132@qq.com`，无 `target`；微信图 `/contact/wechat-qr.webp`（约 440×560）解码成功，jpg 仅作兜底，占位隐藏，未使用 `mini-qr.png`。
 4. 关闭卡片后右下角胶囊仍在。loopback 即使构建时注入了百度公开 ID，也**不**加载 `hm.baidu.com`、不初始化 `_hmt`。
 
 ### 子站项目页
@@ -41,6 +41,6 @@
 - 未推送任何远程
 - 未合并 `main`
 - 未提交未跟踪的 `assets/`
-- 微信二维码已无损复制为 `public/contact/wechat-qr.jpg` 与 `work/public/contact/wechat-qr.jpg`，四份 SHA-256 一致
+- 微信二维码 jpg 保持无损 888×1131；双站 webp 轻量清晰版 SHA-256 一致，体积 < 40 KB
 - 百度公开 ID 仅通过临时进程环境变量构建验证，未写入源码或 `.env`
 - 源码与构建产物无 tawk / pop800 残留
