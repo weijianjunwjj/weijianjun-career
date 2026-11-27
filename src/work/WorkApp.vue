@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
+import LazyImg from '../components/LazyImg.vue'
 import ResumeLink from '../components/ResumeLink.vue'
 import type { LightboxItem } from '../components/MediaLightbox.vue'
 import WorkNav from './components/WorkNav.vue'
@@ -267,20 +268,20 @@ onBeforeUnmount(() => {
 
                 <div class="index-preview" :class="{ 'is-dual': Boolean(card.secondaryThumb) }">
                   <div class="optical-frame index-desktop-thumb">
-                    <img
+                    <LazyImg
                       :src="card.thumb"
                       :alt="card.thumbAlt"
-                      width="1320"
-                      height="820"
+                      :width="1320"
+                      :height="820"
                     />
                   </div>
                   <div v-if="card.secondaryThumb" class="phone-bezel index-phone-thumb">
                     <div class="phone-bezel-screen">
-                      <img
+                      <LazyImg
                         :src="card.secondaryThumb"
                         :alt="card.secondaryAlt || card.thumbAlt"
-                        width="390"
-                        height="844"
+                        :width="390"
+                        :height="844"
                       />
                     </div>
                   </div>

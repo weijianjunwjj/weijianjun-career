@@ -124,7 +124,14 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
                 :aria-label="`放大查看 ${activeItem.title} 桌面端截图`"
                 @click="openStageLightbox($event, false)"
               >
-                <img :src="activeItem.image" :alt="activeItem.alt" width="1320" height="820" />
+                <img
+                  :src="activeItem.thumb || activeItem.image"
+                  :alt="activeItem.alt"
+                  width="1320"
+                  height="820"
+                  fetchpriority="high"
+                  decoding="async"
+                />
                 <span class="optical-zoom-hint">
                   <AppIcon name="expand" :size="12" />
                   <span>放大查验</span>
@@ -140,10 +147,12 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
                 @click="openStageLightbox($event, true)"
               >
                 <img
-                  :src="activeItem.secondaryImage"
+                  :src="activeItem.secondaryThumb || activeItem.secondaryImage"
                   :alt="activeItem.secondaryAlt || activeItem.alt"
                   width="420"
                   height="910"
+                  fetchpriority="high"
+                  decoding="async"
                 />
               </button>
             </div>
@@ -160,7 +169,13 @@ function openStageLightbox(event: MouseEvent, startSecondary = false) {
               :aria-label="`放大查看 ${activeItem.title} 截图`"
               @click="openStageLightbox($event, false)"
             >
-              <img :src="activeItem.image" :alt="activeItem.alt" width="1320" height="880" />
+              <img
+                :src="activeItem.thumb || activeItem.image"
+                :alt="activeItem.alt"
+                width="1320"
+                height="880"
+                decoding="async"
+              />
               <span class="optical-zoom-hint">
                 <AppIcon name="expand" :size="12" />
                 <span>点击放大</span>

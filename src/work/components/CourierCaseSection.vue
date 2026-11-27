@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AppIcon from '../../components/AppIcon.vue'
+import LazyImg from '../../components/LazyImg.vue'
 import type { LightboxItem } from '../../components/MediaLightbox.vue'
 import AsyncOrderSimulator from './AsyncOrderSimulator.vue'
 import CaseValueStrip from './CaseValueStrip.vue'
@@ -161,9 +162,11 @@ function openQr(event: MouseEvent) {
         <div class="mini-spotlight">
           <div class="video-trigger-card">
             <div class="video-thumb">
-              <img
+              <LazyImg
                 :src="courierCase.miniVideo.poster"
                 alt="逍遥邮微信小程序真机录屏封面"
+                :width="420"
+                :height="910"
               />
               <button
                 type="button"
@@ -238,7 +241,7 @@ function openQr(event: MouseEvent) {
                 :aria-label="`放大查看 ${shot.title}`"
                 @click="openGallery(courierCase.miniEvidence, idx, $event)"
               >
-                <img :src="shot.src" :alt="shot.alt" loading="lazy" width="420" height="910" />
+                <LazyImg :src="shot.thumb || shot.src" :alt="shot.alt" :width="420" :height="910" />
               </button>
             </div>
             <div class="shot-copy">
@@ -293,7 +296,7 @@ function openQr(event: MouseEvent) {
                 :aria-label="`放大查看 ${shot.title}`"
                 @click="openGallery(courierCase.adminEvidence, idx, $event)"
               >
-                <img :src="shot.src" :alt="shot.alt" loading="lazy" width="1320" height="820" />
+                <LazyImg :src="shot.thumb || shot.src" :alt="shot.alt" :width="1320" :height="820" />
                 <span class="optical-zoom-hint">
                   <AppIcon name="expand" :size="12" />
                   <span>放大原图</span>

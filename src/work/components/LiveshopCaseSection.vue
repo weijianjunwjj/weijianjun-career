@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppIcon from '../../components/AppIcon.vue'
+import LazyImg from '../../components/LazyImg.vue'
 import type { LightboxItem } from '../../components/MediaLightbox.vue'
 import CaseValueStrip from './CaseValueStrip.vue'
 import DecisionAccordion from './DecisionAccordion.vue'
@@ -164,12 +165,11 @@ function openGallery(list: EvidenceMedia[], shotId: string, event: MouseEvent) {
               @click="openGallery(liveshopCase.appEvidence, shot.id, $event)"
             >
               <div class="phone-bezel">
-                <img
-                  :src="shot.src"
+                <LazyImg
+                  :src="shot.thumb || shot.src"
                   :alt="shot.alt"
-                  loading="lazy"
-                  width="390"
-                  height="844"
+                  :width="390"
+                  :height="844"
                 />
               </div>
               <span class="optical-zoom-hint">
@@ -222,12 +222,11 @@ function openGallery(list: EvidenceMedia[], shotId: string, event: MouseEvent) {
             aria-label="放大查看 LiveShop 管理后台商品订单截图"
             @click="openGallery(liveshopCase.evidence, liveshopCase.evidence[0].id, $event)"
           >
-            <img
-              :src="liveshopCase.evidence[0].src"
+            <LazyImg
+              :src="liveshopCase.evidence[0].thumb || liveshopCase.evidence[0].src"
               :alt="liveshopCase.evidence[0].alt"
-              loading="lazy"
-              width="1320"
-              height="920"
+              :width="1320"
+              :height="920"
             />
             <span class="optical-zoom-hint">
               <AppIcon name="expand" :size="12" />
