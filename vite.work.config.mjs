@@ -17,13 +17,14 @@ const ROUTE_TITLES = {
 }
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '.', '')
+  const env = loadEnv(mode, projectRoot, '')
   const commitSha = env.GITHUB_SHA || 'local'
   const builtAt = new Date().toISOString()
   const outDir = resolve(projectRoot, 'dist-work')
 
   return {
     root: resolve(projectRoot, 'work'),
+    envDir: projectRoot,
     base: '/',
     cacheDir: resolve(projectRoot, 'node_modules/.vite-work'),
     publicDir: resolve(projectRoot, 'work/public'),

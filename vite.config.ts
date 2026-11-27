@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
   const sentryAuthToken = env.SENTRY_AUTH_TOKEN
 
   return {
+    envDir: '.',
     base: '/',
     build: {
       // "hidden": maps are generated for upload, but bundles don't reference them.

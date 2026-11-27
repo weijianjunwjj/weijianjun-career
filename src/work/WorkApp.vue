@@ -11,6 +11,7 @@ import LiveshopCaseSection from './components/LiveshopCaseSection.vue'
 import { links } from '../data/links.ts'
 import { profile } from '../data/profile.ts'
 import { RESUME_FILENAME } from '../data/siteConfig.ts'
+import { notifyVisitorRouteChange, resolveWorkProjectId } from '../shared/visitorWidget.ts'
 import {
   workIndexCards,
   workOverviewStats,
@@ -94,6 +95,16 @@ function updateDocumentTitle() {
   document.title = CASE_TITLES[activeCase.value]
 }
 
+function emitVisitorContext() {
+  const path = window.location.pathname.replace(/\/+$/, '') || '/'
+  notifyVisitorRouteChange({
+    site: 'work',
+    path,
+    title: document.title,
+    projectId: resolveWorkProjectId(path),
+  })
+}
+
 async function scrollToHashIfPresent() {
   const hash = window.location.hash
   if (!hash || hash.length < 2) return
@@ -126,6 +137,7 @@ function syncFromLocation() {
     courierSubView.value = 'overview'
   }
   updateDocumentTitle()
+  emitVisitorContext()
   void scrollToHashIfPresent()
 }
 
@@ -138,6 +150,7 @@ function navigateTo(target: { caseId: WorkCaseId; path: string }) {
     window.history.pushState({}, '', target.path)
   }
   updateDocumentTitle()
+  emitVisitorContext()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -153,6 +166,7 @@ function handleCourierSubView(view: CourierSubView) {
     window.history.pushState({}, '', nextPath)
   }
   updateDocumentTitle()
+  emitVisitorContext()
 }
 
 function handleOpenMedia(payload: {
