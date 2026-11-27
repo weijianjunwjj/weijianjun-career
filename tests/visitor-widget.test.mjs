@@ -25,6 +25,7 @@ import {
   sanitizeVisitorPath,
   setOwnerExcluded,
   shouldInjectBaiduScript,
+  WELCOME_FALLBACK_MS,
 } from '../src/shared/ownerExclude.ts'
 import { BAIDU_SCRIPT_ATTR, CONTACT_CARD_ID, CONTACT_LAUNCHER_ID } from '../src/shared/visitorAdapter.ts'
 import {
@@ -265,7 +266,7 @@ function mountWidget(host, extra = {}) {
     host,
     baiduHmIdMain: extra.baiduHmIdMain,
     baiduHmIdWork: extra.baiduHmIdWork,
-    fallbackDelayMs: extra.fallbackDelayMs ?? 4000,
+    fallbackDelayMs: extra.fallbackDelayMs ?? WELCOME_FALLBACK_MS,
     setTimeoutFn: timers.setTimeout,
     clearTimeoutFn: timers.clearTimeout,
   })
@@ -494,8 +495,50 @@ test('production visitor without baidu id still mounts contact channel with zero
   assert.equal(result.mounted, true)
   assert.equal(httpScriptSrcs(host).length, 0)
   assert.equal(host._hmt, undefined)
-  timers.flush(4000)
+  assert.ok(host.document.getElementById(CONTACT_LAUNCHER_ID))
+  timers.flush(2500)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
+})
+
+test('launcher is immediately visible at bottom-right; welcome pops at 2500ms; owner hides all surfaces', () => {
+  assert.equal(WELCOME_FALLBACK_MS, 2500)
+  resetVisitorWidgetForTests()
+  const host = createHost()
+  const { timers } = mountWidget(host, BAIDU)
+  const launcher = host.document.getElementById(CONTACT_LAUNCHER_ID)
+  assert.ok(launcher)
+  assert.equal(launcher.getAttribute('aria-label'), '聊聊 / 联系魏建军')
+  assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
+  timers.flush(2499)
+  assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
+  assert.ok(host.document.getElementById(CONTACT_LAUNCHER_ID))
+  timers.flush(2500)
+  assert.ok(host.document.getElementById('wjj-welcome-bubble'))
+  assert.ok(host.document.getElementById(CONTACT_LAUNCHER_ID))
+  const style = host.document.getElementById('wjj-visitor-widget-style')
+  assert.ok(style)
+  assert.match(style.textContent, /#wjj-contact-launcher \{[\s\S]*right:\s*24px/)
+  assert.match(style.textContent, /#wjj-contact-launcher \{[\s\S]*bottom:\s*24px/)
+  assert.match(style.textContent, /#wjj-contact-launcher \{[\s\S]*z-index:\s*60/)
+  assert.match(style.textContent, /#wjj-welcome-bubble \{[\s\S]*right:\s*24px/)
+  assert.match(style.textContent, /#wjj-welcome-bubble \{[\s\S]*bottom:\s*82px/)
+  assert.match(style.textContent, /#wjj-contact-card \{[\s\S]*right:\s*24px/)
+  assert.match(style.textContent, /#wjj-contact-card \{[\s\S]*bottom:\s*24px/)
+  assert.match(style.textContent, /@media \(max-width: 640px\)/)
+  findAction(host, 'chat').click()
+  assert.ok(host.document.getElementById(CONTACT_CARD_ID))
+  assert.equal(host.document.getElementById(CONTACT_LAUNCHER_ID), null)
+  assert.equal(host.document.getElementById('wjj-welcome-bubble'), null)
+
+  resetVisitorWidgetForTests()
+  const ownerHost = createHost({
+    location: { hostname: 'weijianjun.me', hash: '#owner-exclude', protocol: 'https:' },
+  })
+  const ownerMount = mountWidget(ownerHost, BAIDU)
+  ownerMount.timers.flush(2500)
+  assert.equal(ownerHost.document.getElementById('wjj-welcome-bubble'), null)
+  assert.equal(ownerHost.document.getElementById(CONTACT_CARD_ID), null)
+  assert.equal(ownerHost.document.getElementById(CONTACT_LAUNCHER_ID), null)
 })
 
 test('loopback default skips channel; preview query enables local contact card without hm.js', () => {
@@ -522,6 +565,7 @@ test('loopback default skips channel; preview query enables local contact card w
   assert.equal(mounted.result.mounted, true)
   assert.equal(httpScriptSrcs(preview).length, 0)
   assert.equal(preview._hmt, undefined)
+  assert.ok(preview.document.getElementById(CONTACT_LAUNCHER_ID))
 })
 
 test('welcome shown cookie is session-only and shared on production domain', () => {
@@ -572,8 +616,10 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
   const sessionStorage = memoryStorage()
   const host = createHost({ localStorage: storage, sessionStorage })
   const { timers } = mountWidget(host, BAIDU)
-  timers.flush(4000)
+  assert.ok(host.document.getElementById(CONTACT_LAUNCHER_ID))
+  timers.flush(2500)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
+  assert.ok(host.document.getElementById(CONTACT_LAUNCHER_ID))
   assert.match(host.document.cookie, new RegExp(`${WELCOME_COOKIE}=1`))
 
   resetVisitorWidgetForTests()
@@ -583,7 +629,7 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     sessionStorage,
   })
   const again = mountWidget(refreshed, BAIDU)
-  again.timers.flush(4000)
+  again.timers.flush(2500)
   assert.equal(refreshed.document.getElementById('wjj-welcome-bubble'), null)
   assert.ok(refreshed.document.getElementById(CONTACT_LAUNCHER_ID))
 
@@ -595,7 +641,7 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
     location: { hostname: 'work.weijianjun.me', protocol: 'https:', pathname: '/projects/courier' },
   })
   const workMount = mountWidget(workHost, { site: 'work', ...BAIDU })
-  workMount.timers.flush(4000)
+  workMount.timers.flush(2500)
   assert.equal(workHost.document.getElementById('wjj-welcome-bubble'), null)
 
   resetVisitorWidgetForTests()
@@ -614,8 +660,9 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
   )
   const ownerMount = mountWidget(ownerHost, BAIDU)
   assert.equal(ownerMount.result.mounted, false)
-  ownerMount.timers.flush(4000)
+  ownerMount.timers.flush(2500)
   assert.equal(ownerHost.document.getElementById('wjj-welcome-bubble'), null)
+  assert.equal(ownerHost.document.getElementById(CONTACT_CARD_ID), null)
   assert.equal(ownerHost.document.getElementById(CONTACT_LAUNCHER_ID), null)
   assert.equal(ownerHost.registry.scripts.length, 0)
   assert.equal(ownerHost._hmt, undefined)
@@ -624,7 +671,7 @@ test('single-visit welcome: first allowed, refresh/route/cross-site blocked, own
   const empty = createHost({ location: { hostname: 'example.com', protocol: 'https:' } })
   const emptyMount = mountWidget(empty)
   assert.equal(emptyMount.result.adapter, 'none')
-  emptyMount.timers.flush(4000)
+  emptyMount.timers.flush(2500)
   assert.equal(empty.document.getElementById('wjj-welcome-bubble'), null)
 })
 
@@ -632,13 +679,13 @@ test('visible page shows welcome once; hidden page does not; returning visible r
   resetVisitorWidgetForTests()
   const visible = createHost({ visibilityState: 'visible' })
   const visibleMount = mountWidget(visible, BAIDU)
-  visibleMount.timers.flush(4000)
+  visibleMount.timers.flush(2500)
   assert.ok(visible.document.getElementById('wjj-welcome-bubble'))
 
   resetVisitorWidgetForTests()
   const hidden = createHost({ visibilityState: 'hidden' })
   const hiddenMount = mountWidget(hidden, BAIDU)
-  hiddenMount.timers.flush(4000)
+  hiddenMount.timers.flush(2500)
   assert.equal(hidden.document.getElementById('wjj-welcome-bubble'), null)
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, false)
 
@@ -698,7 +745,7 @@ test('wechat qr css uses contain not cover, and img keeps 888:1131 ratio', () =>
     },
   })
   const { timers } = mountWidget(host)
-  timers.flush(4000)
+  timers.flush(2500)
   findAction(host, 'chat').click()
   const style = host.document.getElementById('wjj-visitor-widget-style')
   assert.ok(style)
@@ -724,7 +771,7 @@ test('openChat opens contact card with mailto, copy, and wechat onerror fallback
   })
   const { timers } = mountWidget(host, { site: 'work' })
   notifyVisitorRouteChange({ site: 'work', path: '/projects/lowcode', projectId: 'lowcode' })
-  timers.flush(4000)
+  timers.flush(2500)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
   assert.match(findField(host, 'welcome-copy').textContent, /企业级低代码引擎/)
   findAction(host, 'chat').click()
@@ -827,7 +874,7 @@ test('enabling exclude after mount cancels timer, hides surfaces, stops tracking
   assert.equal(result.mounted, true)
   notifyVisitorRouteChange({ site: 'main', path: '/#courier', projectId: 'courier' })
   assert.equal(getVisitorWidgetDebugState().hasFallbackTimer, true)
-  timers.flush(4000)
+  timers.flush(2500)
   assert.ok(host.document.getElementById('wjj-welcome-bubble'))
   findAction(host, 'chat').click()
   assert.ok(host.document.getElementById(CONTACT_CARD_ID))

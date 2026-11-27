@@ -8,7 +8,7 @@ export const FLAG_VALUE = '1'
 export const OWNER_COOKIE_MAX_AGE = 31536000
 export const ROOT_COOKIE_DOMAIN = '.weijianjun.me'
 export const BAIDU_HM_ID_PATTERN = /^[a-f0-9]{32}$/i
-export const WELCOME_FALLBACK_MS = 4000
+export const WELCOME_FALLBACK_MS = 2500
 export const PREVIEW_QUERY = 'visitor-preview'
 
 export const PROJECT_WHITELIST = [

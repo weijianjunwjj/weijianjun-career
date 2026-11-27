@@ -6,7 +6,7 @@
 
 1. **采集前守卫**：`isOwnerExcluded()` 为真时，绝不插入 `https://hm.baidu.com/hm.js`、绝不初始化 `window._hmt`、绝不弹欢迎气泡、绝不渲染联系卡或胶囊。loopback 默认也不注入真实百度脚本。
 2. **可插拔 Adapter**：`none` / `baidu` / `preview`。生产域（`weijianjun.me` / `*.weijianjun.me`）走 `baidu`（合法 ID 才注入 hm.js，联系卡始终可用）；loopback 带 `?visitor-preview=1` 走 `preview`（完整欢迎与联系卡，不发 hm.js）；其余为 `none`。
-3. **前端自主欢迎 + 自研深空联系卡**：与任何第三方客服账号解耦。非站长、本轮未欢迎、页面可见、停留约 4 秒时弹出一次欢迎气泡；点击后展开邮箱 / 微信直联卡片。
+3. **前端自主欢迎 + 自研深空联系卡**：与任何第三方客服账号解耦。非站长且有互动通道时，右下角霓虹胶囊「聊聊 / 联系魏建军」进站即可见。非站长、本轮未欢迎、页面可见、停留约 2.5 秒时再弹出一次欢迎气泡；点击后展开邮箱 / 微信直联卡片。
 
 主站 `src/main.ts` 与子站 `work/main.ts` 都调用同一套 `setupVisitorWidget`（防重复初始化）。子站 `WorkApp.vue` 在路由变化后调用 `notifyVisitorRouteChange`。
 
@@ -70,7 +70,7 @@
 - 非站长
 - 未标记 `welcome_shown`
 - `document.visibilityState === 'visible'`
-- 停留约 4 秒（延迟可注入，便于单测）
+- 停留约 2.5 秒（`WELCOME_FALLBACK_MS = 2500`，延迟可注入，便于单测）
 - 生产域，或本地带 `?visitor-preview=1`
 
 loopback 默认静默。
@@ -94,15 +94,15 @@ loopback 默认静默。
 
 有项目：「正在看「企业级低代码引擎」？有想交流的技术细节或岗位机会，欢迎直接联系我。」
 无项目：「你好，正在看哪个项目？有想交流的技术细节或岗位机会，欢迎直接联系我。」
-主按钮：「邮箱 / 微信直联」；右上角关闭（Esc）。
+主按钮：「一键发邮件 / 加微信」；右上角关闭（Esc）。顶部头标「魏建军 · 欢迎交流」。
 
 点击后展开深空玻璃直联卡片（邮箱、微信号取自 `src/data/profile.ts`）：
 
 1. `mailto:` 一键发邮件（打开 Mail），`subject` / `body` 自动编码当前项目中文名；不设 `target="_blank"`。旁配「复制邮箱」，点击后约 2 秒显示「已复制」。
 2. 个人微信二维码槽位 `publicAsset('contact/wechat-qr.jpg')`。「复制微信号」复制电话 `18352517082`。
-3. 欢迎关闭后，左下角极克制胶囊「联系魏建军」可再次打开卡片。站长排除开启时该按钮绝不渲染。
+3. 右下角常驻霓虹胶囊「聊聊 / 联系魏建军」进站即可见，欢迎气泡在胶囊正上方，不互相遮挡。站长排除开启时气泡、卡片、胶囊全部不渲染。
 
-`Esc` 关闭、`role="dialog"`、尊重 `prefers-reduced-motion`。390px 窄屏与桌面均停在左下，不遮挡主按钮。
+`Esc` 关闭、`role="dialog"`、尊重 `prefers-reduced-motion`。桌面 `right/bottom: 24px`，`<=640px` 为 `16px`。
 
 ## 匿名项目上下文
 

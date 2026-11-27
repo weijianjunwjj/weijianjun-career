@@ -65,6 +65,15 @@ export const PROJECT_LABELS: Record<ProjectId, string> = {
 }
 
 const WIDGET_CSS = `
+@keyframes wjj-pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 232, 255, 0.62); }
+  70% { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(56, 232, 255, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(56, 232, 255, 0); }
+}
+@keyframes wjj-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 #wjj-owner-status,
 #wjj-welcome-bubble,
 #wjj-visitor-receipt,
@@ -94,8 +103,7 @@ const WIDGET_CSS = `
 #wjj-owner-status button,
 #wjj-welcome-bubble button,
 #wjj-visitor-receipt button,
-#wjj-contact-card button,
-#wjj-contact-launcher {
+#wjj-contact-card button {
   cursor: pointer;
   border-radius: 10px;
   font-size: 13px;
@@ -112,9 +120,7 @@ const WIDGET_CSS = `
   font-size: 13px;
   font-weight: 600;
 }
-#wjj-welcome-bubble,
-#wjj-visitor-receipt,
-#wjj-contact-card {
+#wjj-visitor-receipt {
   position: fixed;
   left: 16px;
   bottom: 16px;
@@ -127,15 +133,70 @@ const WIDGET_CSS = `
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 40px -24px rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(16px);
 }
-#wjj-welcome-bubble p,
+#wjj-welcome-bubble,
+#wjj-contact-card {
+  position: fixed;
+  right: 24px;
+  left: auto;
+  z-index: 60;
+  width: min(360px, calc(100vw - 32px));
+  padding: 14px 14px 12px;
+  border-radius: 16px;
+  backdrop-filter: blur(16px);
+}
+#wjj-welcome-bubble {
+  right: 24px;
+  bottom: 82px;
+  z-index: 60;
+  border: 1.5px solid rgba(56, 232, 255, 0.65);
+  background: rgba(9, 17, 36, 0.96);
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.9), 0 0 28px -6px rgba(56, 232, 255, 0.35);
+  animation: wjj-rise 0.32s ease-out;
+}
+#wjj-contact-card {
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  border: 1.5px solid rgba(56, 232, 255, 0.55);
+  background: rgba(9, 17, 36, 0.96);
+  box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.9), 0 0 24px -6px rgba(56, 232, 255, 0.32);
+}
+#wjj-welcome-bubble p { margin: 0 20px 12px 0; font-size: 14px; line-height: 1.55; color: #eef5ff; }
 #wjj-visitor-receipt p,
 #wjj-contact-card p { margin: 0 20px 12px 0; font-size: 14px; line-height: 1.55; color: #d5e2f5; }
 #wjj-visitor-receipt dl { margin: 0 20px 12px 0; }
 #wjj-visitor-receipt dt { font-size: 11px; letter-spacing: 0.04em; color: #6f84a8; }
 #wjj-visitor-receipt dd { margin: 0 0 8px; font-size: 13px; color: #f0f5ff; }
-#wjj-welcome-bubble .wjj-row,
+#wjj-welcome-bubble .wjj-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 28px 10px 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #e6fbff;
+}
+#wjj-welcome-bubble .wjj-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 #wjj-contact-card .wjj-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-#wjj-welcome-bubble [data-action="chat"],
+#wjj-welcome-bubble [data-action="chat"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(165, 243, 252, 0.55);
+  background: linear-gradient(135deg, #38e8ff 0%, #3b82f6 58%, #7c5cff 100%);
+  color: #030712;
+  text-decoration: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
 #wjj-contact-card [data-action="mailto"] {
   padding: 8px 14px;
   border: 1px solid rgba(165, 243, 252, 0.45);
@@ -149,7 +210,7 @@ const WIDGET_CSS = `
 #wjj-contact-card [data-action="copy-email"],
 #wjj-contact-card [data-action="copy-wechat"] {
   padding: 7px 12px;
-  border: 1px solid rgba(148, 179, 255, 0.28);
+  border: 1px solid rgba(56, 232, 255, 0.28);
   background: rgba(16, 27, 51, 0.7);
   color: #e6fbff;
 }
@@ -183,7 +244,7 @@ const WIDGET_CSS = `
   margin-bottom: 8px;
   background: #ffffff;
   border-radius: 12px;
-  border: 1px solid rgba(148, 179, 255, 0.18);
+  border: 1px solid rgba(56, 232, 255, 0.28);
 }
 #wjj-contact-card [data-field="wechat-placeholder"] {
   margin: 0 0 8px;
@@ -196,18 +257,48 @@ const WIDGET_CSS = `
 }
 #wjj-contact-launcher {
   position: fixed;
-  left: 16px;
-  bottom: 16px;
-  z-index: 35;
-  padding: 8px 12px;
-  border: 1px solid rgba(148, 179, 255, 0.22);
+  right: 24px;
+  bottom: 24px;
+  left: auto;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 0;
   border-radius: 999px;
-  background: rgba(11, 19, 38, 0.86);
-  color: #e6fbff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 28px -20px rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(14px);
-  font-size: 12px;
-  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #38e8ff 0%, #3b82f6 58%, #7c5cff 100%);
+  color: #030712;
+  box-shadow: 0 10px 30px -6px rgba(56, 232, 255, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.28) inset;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+#wjj-contact-launcher:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px -6px rgba(56, 232, 255, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+}
+.wjj-pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4dffc2;
+  box-shadow: 0 0 0 0 rgba(56, 232, 255, 0.65);
+  animation: wjj-pulse 1.7s ease-out infinite;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  #wjj-contact-card,
+  #wjj-contact-launcher {
+    right: 16px;
+    bottom: 16px;
+  }
+  #wjj-welcome-bubble {
+    right: 16px;
+    bottom: 74px;
+  }
 }
 @media (max-width: 390px) {
   #wjj-welcome-bubble,
@@ -216,6 +307,9 @@ const WIDGET_CSS = `
 @media (prefers-reduced-motion: reduce) {
   #wjj-owner-status, #wjj-welcome-bubble, #wjj-visitor-receipt,
   #wjj-contact-card, #wjj-contact-launcher { backdrop-filter: none; }
+  .wjj-pulse,
+  #wjj-welcome-bubble { animation: none; }
+  #wjj-contact-launcher { transition: none; }
 }
 `
 
@@ -384,6 +478,7 @@ function showContactCard(host: VisitorHost, ctx?: ProjectCtx) {
   const io = ioFromHost(host)
   if (isOwnerExcluded(io) || !hasInteractiveChannel()) return
   ensureStyle(host)
+  hideWelcomeBubble(host, { persistLauncher: false })
   removeEl(host, CONTACT_CARD_ID)
   removeEl(host, CONTACT_LAUNCHER_ID)
   removeEl(host, RECEIPT_ID)
@@ -475,8 +570,6 @@ function hideContactCard(host: VisitorHost, options: { persistLauncher?: boolean
 function showContactLauncher(host: VisitorHost) {
   const io = ioFromHost(host)
   if (isOwnerExcluded(io) || !hasInteractiveChannel()) return
-  if (!isWelcomeShown(io)) return
-  if (host.document.getElementById(BUBBLE_ID)) return
   if (host.document.getElementById(CONTACT_CARD_ID)) return
   if (host.document.getElementById(CONTACT_LAUNCHER_ID)) return
   ensureStyle(host)
@@ -484,8 +577,14 @@ function showContactLauncher(host: VisitorHost) {
   launcher.id = CONTACT_LAUNCHER_ID
   launcher.type = 'button'
   launcher.setAttribute('data-action', 'launcher')
-  launcher.setAttribute('aria-label', '联系魏建军')
-  launcher.textContent = '联系魏建军'
+  launcher.setAttribute('aria-label', '聊聊 / 联系魏建军')
+  const pulse = host.document.createElement('span')
+  pulse.setAttribute('class', 'wjj-pulse')
+  pulse.setAttribute('aria-hidden', 'true')
+  const label = host.document.createElement('span')
+  label.textContent = '聊聊 / 联系魏建军'
+  launcher.appendChild(pulse)
+  launcher.appendChild(label)
   launcher.addEventListener('click', () => showContactCard(host, currentCtx(host)))
   host.document.body?.appendChild(launcher)
 }
@@ -637,7 +736,6 @@ function showWelcomeBubble(host: VisitorHost) {
   if (host.document.getElementById(BUBBLE_ID)) return
   ensureStyle(host)
   markWelcomeShown(io)
-  hideContactLauncher(host)
 
   const bubble = host.document.createElement('div')
   bubble.id = BUBBLE_ID
@@ -652,6 +750,17 @@ function showWelcomeBubble(host: VisitorHost) {
   close.addEventListener('click', () => hideWelcomeBubble(host))
   bubble.appendChild(close)
 
+  const head = host.document.createElement('div')
+  head.setAttribute('class', 'wjj-head')
+  const headPulse = host.document.createElement('span')
+  headPulse.setAttribute('class', 'wjj-pulse')
+  headPulse.setAttribute('aria-hidden', 'true')
+  const headText = host.document.createElement('span')
+  headText.textContent = '魏建军 · 欢迎交流'
+  head.appendChild(headPulse)
+  head.appendChild(headText)
+  bubble.appendChild(head)
+
   const copy = host.document.createElement('p')
   copy.setAttribute('data-field', 'welcome-copy')
   copy.textContent = welcomeCopy(currentCtx(host).project)
@@ -662,7 +771,7 @@ function showWelcomeBubble(host: VisitorHost) {
   const chat = host.document.createElement('button')
   chat.type = 'button'
   chat.setAttribute('data-action', 'chat')
-  chat.textContent = '邮箱 / 微信直联'
+  chat.textContent = '一键发邮件 / 加微信'
   chat.addEventListener('click', () => {
     hideWelcomeBubble(host, { persistLauncher: false })
     adapter.openChat(currentCtx(host))
@@ -790,7 +899,7 @@ export function setupVisitorWidget(options: VisitorWidgetOptions): {
   mounted = true
   if (siteKind === 'main') emitMainRoute(host)
   scheduleWelcome(host)
-  if (isWelcomeShown(io) && !host.document.getElementById(BUBBLE_ID)) showContactLauncher(host)
+  showContactLauncher(host)
   return { adapter: adapterId, mounted: true }
 }
 
