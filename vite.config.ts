@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => {
     build: {
       // "hidden": maps are generated for upload, but bundles don't reference them.
       sourcemap: sentryAuthToken ? 'hidden' : false,
+      modulePreload: {
+        resolveDependencies: (_filename, deps) =>
+          deps.filter((dep) => !/monitoring|visitorWidget/.test(dep)),
+      },
     },
     define: {
       __COMMIT_SHA__: JSON.stringify(commitSha),
@@ -27,6 +31,31 @@ export default defineConfig(({ mode }) => {
       {
         name: 'career-social-metadata',
         transformIndexHtml: () => socialTags(env),
+      },
+      {
+        name: 'hero-image-preload',
+        transformIndexHtml: () => [
+          {
+            tag: 'link',
+            attrs: {
+              rel: 'preload',
+              as: 'image',
+              href: '/evidence/courier/admin-orders.webp',
+              fetchpriority: 'high',
+            },
+            injectTo: 'head',
+          },
+          {
+            tag: 'link',
+            attrs: {
+              rel: 'preload',
+              as: 'image',
+              href: '/evidence/courier/mini-booking.webp',
+              fetchpriority: 'high',
+            },
+            injectTo: 'head',
+          },
+        ],
       },
       {
         // Publishes /version.json so anyone can check which commit is live.

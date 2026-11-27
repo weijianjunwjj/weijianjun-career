@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
+import LazyImg from '../components/LazyImg.vue'
 import type { LightboxItem } from '../components/MediaLightbox.vue'
 import { aiCompanions, novaWing } from '../data/projects.ts'
 
@@ -32,16 +33,23 @@ function openEvidenceLightbox(event: MouseEvent, startIndex: number) {
   })
 }
 
-function openDemoVideo(event: MouseEvent) {
+function openDemoVideo(event: MouseEvent, useFull = false) {
   emit('openMedia', {
     items: [
       {
         kind: 'video',
-        src: novaWing.demo.src,
+        src: useFull ? novaWing.demo.fullSrc : novaWing.demo.src,
+        fullSrc: novaWing.demo.fullSrc,
         poster: novaWing.demo.poster,
-        title: `${novaWing.fullName} · 完整运行录屏（${novaWing.demo.duration}）`,
-        caption: novaWing.demo.description,
-        provenance: '原始完整录屏 · 按需请求',
+        title: useFull
+          ? `${novaWing.fullName} · 完整运行录屏（${novaWing.demo.originalDuration}）`
+          : `${novaWing.fullName} · 精华预览（${novaWing.demo.duration}）`,
+        caption: useFull ? novaWing.demo.fullDescription : novaWing.demo.description,
+        provenance: useFull ? '原始完整录屏 · 按需请求' : '720p 精华预览 · 按需请求',
+        previewSrc: novaWing.demo.src,
+        previewLabel: novaWing.demo.switchPreviewLabel,
+        fullLabel: novaWing.demo.switchFullLabel,
+        bilibiliUrl: novaWing.demo.bilibiliUrl,
       },
     ],
     startIndex: 0,
@@ -165,10 +173,9 @@ function openDemoVideo(event: MouseEvent) {
                 :aria-label="`放大查看 ${activeEvidence.label} 真实截屏`"
                 @click="openEvidenceLightbox($event, activeEvidenceIndex)"
               >
-                <img
+                <LazyImg
                   :src="activeEvidence.thumb"
                   :alt="activeEvidence.alt"
-                  loading="lazy"
                   :width="activeEvidence.width"
                   :height="activeEvidence.height"
                 />
@@ -199,24 +206,28 @@ function openDemoVideo(event: MouseEvent) {
 
             <div class="demo-poster-card">
               <div class="demo-poster-wrap">
-                <img
+                <LazyImg
                   :src="novaWing.demo.poster"
-                  alt="NovaWing 13 分钟完整运行原始录屏封面"
-                  loading="lazy"
-                  width="640"
-                  height="360"
+                  alt="NovaWing 75 秒精华预览与完整录屏封面"
+                  :width="640"
+                  :height="360"
                 />
                 <span class="mono demo-duration">{{ novaWing.demo.duration }}</span>
               </div>
               <div class="demo-poster-footer">
                 <div>
-                  <p class="demo-title">完整原始运行录屏</p>
-                  <p class="demo-note">点击按需加载播放，首屏零视频带宽消耗</p>
+                  <p class="demo-title">默认播放 75 秒精华预览</p>
+                  <p class="demo-note">首屏零视频带宽；可切换 13 分钟完整原始录屏</p>
                 </div>
-                <button type="button" class="btn btn-primary btn-sm" @click="openDemoVideo">
-                  <AppIcon name="play" :size="14" />
-                  <span>播放录屏</span>
-                </button>
+                <div class="demo-actions">
+                  <button type="button" class="btn btn-primary btn-sm" @click="openDemoVideo($event, false)">
+                    <AppIcon name="play" :size="14" />
+                    <span>播放精华预览</span>
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" @click="openDemoVideo($event, true)">
+                    <span>{{ novaWing.demo.switchFullLabel }}</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -543,6 +554,12 @@ function openDemoVideo(event: MouseEvent) {
   margin: 2px 0 0;
   font-size: 12px;
   color: var(--ink-muted);
+}
+
+.demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 /* Companions */

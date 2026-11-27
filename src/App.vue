@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
+import { defineAsyncComponent, hydrateOnVisible, onBeforeUnmount, onMounted, ref } from 'vue'
 import SiteNav from './components/SiteNav.vue'
 import SiteFooter from './components/SiteFooter.vue'
 import HeroSection from './sections/HeroSection.vue'
-import ProjectGatewaySection from './sections/ProjectGatewaySection.vue'
-import EvolutionSection from './sections/EvolutionSection.vue'
-import AiEngineeringSection from './sections/AiEngineeringSection.vue'
-import CredentialsSection from './sections/CredentialsSection.vue'
-import ContactSection from './sections/ContactSection.vue'
 import type { LightboxItem } from './components/MediaLightbox.vue'
+
+function belowFold(loader: () => Promise<unknown>) {
+  return defineAsyncComponent({
+    loader: loader as () => Promise<{ default: unknown }>,
+    hydrate: hydrateOnVisible({ rootMargin: '200px 0px' }),
+  })
+}
+
+const ProjectGatewaySection = belowFold(() => import('./sections/ProjectGatewaySection.vue'))
+const EvolutionSection = belowFold(() => import('./sections/EvolutionSection.vue'))
+const AiEngineeringSection = belowFold(() => import('./sections/AiEngineeringSection.vue'))
+const CredentialsSection = belowFold(() => import('./sections/CredentialsSection.vue'))
+const ContactSection = belowFold(() => import('./sections/ContactSection.vue'))
 
 const MediaLightbox = defineAsyncComponent(() => import('./components/MediaLightbox.vue'))
 

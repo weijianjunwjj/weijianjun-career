@@ -33,6 +33,7 @@ export interface EvidenceMedia {
   title: string
   tag: string
   src: string
+  thumb?: string
   alt: string
   caption: string
   provenance: string
@@ -100,9 +101,9 @@ export const workIndexCards: WorkIndexCard[] = [
     valuePitch:
       '独立主导微信原生小程序与 Vue 3 后台双端：收敛微信支付分异步出单不确定性，内置双 CSV 账单差异对账工具。',
     proofItems: ['5 张真机图', '4 张后台图', '2 段分章录屏', '异步出单状态机', '线上小程序码'],
-    thumb: publicAsset('evidence/courier/admin-orders.webp'),
+    thumb: publicAsset('evidence/courier/admin-orders-720.webp'),
     thumbAlt: '逍遥邮运营后台订单管理截图',
-    secondaryThumb: publicAsset('evidence/courier/mini-booking.webp'),
+    secondaryThumb: publicAsset('evidence/courier/mini-booking-720.webp'),
     secondaryAlt: '逍遥邮微信小程序扫码寄件真机截图',
     ctaLabel: '进入双端证据与状态机',
   },
@@ -118,7 +119,7 @@ export const workIndexCards: WorkIndexCard[] = [
     valuePitch:
       '不推倒 Vue 2.6 老系统，以 Options API 页面级 Store 根治 RefImpl 失活（沉淀 3 个 npm 包），统一 Webpack 5 缓存提效 300s → 30s。',
     proofItems: ['3 组脱敏业务复现', '300s→30s 构建根因', '4 项架构决策', '3 个 npm 开源包'],
-    thumb: publicAsset('evidence/portfolio/sdk-monitor.jpg'),
+    thumb: publicAsset('evidence/portfolio/sdk-monitor-720.webp'),
     thumbAlt: '友谊时光 SDK 实时异常事件监控脱敏复现截图',
     ctaLabel: '进入 EBI 复现与治理决策',
   },
@@ -134,7 +135,7 @@ export const workIndexCards: WorkIndexCard[] = [
     valuePitch:
       '重构 4 类图表统一数据源（+365 / −735 行）与 O(n) 二维 Map 多维透视，闭环 CRUD 异步导入轮询与审批字段权限合流。',
     proofItems: ['四层架构改动落点图', '图表透视交互沙盒', '审批字段权限沙盒', 'CRUD 并发轮询沙盒'],
-    thumb: publicAsset('evidence/portfolio/lowcode-workbench.jpg'),
+    thumb: publicAsset('evidence/portfolio/lowcode-workbench-720.webp'),
     thumbAlt: '企业级低代码平台独立复现交互沙盒界面',
     ctaLabel: '进入 3 合 1 低代码沙盒',
   },
@@ -150,9 +151,9 @@ export const workIndexCards: WorkIndexCard[] = [
     valuePitch:
       '主导海外 App 社区/商城/订单主流程及 X OAuth / PayPal / Google Play IAP 桥接，协同完成后台动态路由与 109 个接口 AST 覆测。',
     proofItems: ['7 屏 App H5 Mock', '后台订单截图', '109 API AST 覆测', '清晰权责边界'],
-    thumb: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
+    thumb: publicAsset('evidence/portfolio/liveshop-orders-720.webp'),
     thumbAlt: 'LiveShop 运营后台商品订单管理截图',
-    secondaryThumb: publicAsset('evidence/liveshop/app-home.webp'),
+    secondaryThumb: publicAsset('evidence/liveshop/app-home-720.webp'),
     secondaryAlt: 'LiveShop uni-app 首页发现流截图',
     ctaLabel: '进入双端证据与权责边界',
   },
@@ -222,6 +223,7 @@ export const courierCase = {
       title: '扫码寄件与预估运费',
       tag: '01 寄件下单',
       src: publicAsset('evidence/courier/mini-booking.webp'),
+      thumb: publicAsset('evidence/courier/mini-booking-720.webp'),
       alt: '逍遥邮微信小程序扫码寄件真机脱敏界面，展示 EMS 经济快递、微信支付分先寄后付与预估运费 8 元',
       caption: '扫站点码自动带入站点上下文，支持地址簿管理、承运商选择与微信支付分先寄后付。',
       provenance: '历史真机脱敏截图（地址与运单已遮蔽）',
@@ -242,6 +244,7 @@ export const courierCase = {
       title: '先享后付服务通知与下单成功',
       tag: '03 异步出单确认',
       src: publicAsset('evidence/courier/mini-success.webp'),
+      thumb: publicAsset('evidence/courier/mini-success-720.webp'),
       alt: '微信支付先享后付服务使用通知与逍遥邮下单成功页面，提供查看订单与再来一单入口',
       caption: '服务端异步分配运单号确认后跳转支付分结果页，明确提供「查看订单」与「再来一单」。',
       provenance: '历史真机脱敏截图',
@@ -274,6 +277,7 @@ export const courierCase = {
       title: '订单列表 · 多维检索与三态核对',
       tag: '01 订单中心',
       src: publicAsset('evidence/courier/admin-orders.webp'),
+      thumb: publicAsset('evidence/courier/admin-orders-720.webp'),
       alt: '逍遥邮管理后台订单列表界面，展示服务商、地区、运单号、付款状态、订单状态和物流状态',
       caption: '支持地区/服务商联动、运单号、微信支付单号等 10 余项筛选条件与表格导出，同屏核对三类业务状态。',
       provenance: '原始历史后台 · Mock 样本数据',
@@ -284,6 +288,7 @@ export const courierCase = {
       title: '订单比对 · 双 CSV 账单异常核验',
       tag: '02 账单对账',
       src: publicAsset('evidence/courier/admin-compare.webp'),
+      thumb: publicAsset('evidence/courier/admin-compare-720.webp'),
       alt: '逍遥邮后台订单比对页，自动识别两份 CSV 账单的缺失单号、重复项与相同单号下不同金额',
       caption: '运营上传两份对账表格后，在前端直接计算独有项、字段重复项与同单号异值（如 16 / 18），一键下载或复制。',
       provenance: '原始历史后台 · Mock 样本数据',
@@ -294,6 +299,7 @@ export const courierCase = {
       title: '出账数据 · 收款与坏账统计看板',
       tag: '03 出账统计',
       src: publicAsset('evidence/courier/admin-billing.webp'),
+      thumb: publicAsset('evidence/courier/admin-billing-720.webp'),
       alt: '逍遥邮后台出账数据页，展示今日与本月总订单款、已收款、未收款与坏账款及环比',
       caption: '按服务商、地区与揽收/下单时间口径聚合今日与本月款项，直观呈现已收、未收与坏账占比。',
       provenance: '原始历史后台 · Mock 样本数据',
@@ -304,6 +310,7 @@ export const courierCase = {
       title: '角色管理 · 服务商与站点权限边界',
       tag: '04 RBAC 权限',
       src: publicAsset('evidence/courier/admin-roles.webp'),
+      thumb: publicAsset('evidence/courier/admin-roles-720.webp'),
       alt: '逍遥邮后台系统管理角色权限列表，区分管理员、北区服务商与南区站点角色',
       caption: '围绕管理员、区域服务商与站点角色配置菜单与操作权限，配套商户账号管理与站点批量激活流程。',
       provenance: '原始历史后台 · Mock 样本数据',
@@ -588,7 +595,8 @@ export const analyticsCase = {
       id: 'sdk-monitor',
       title: 'SDK 实时异常事件监控',
       tag: '01 异常监控与图表下钻',
-      src: publicAsset('evidence/portfolio/sdk-monitor.jpg'),
+      src: publicAsset('evidence/portfolio/sdk-monitor.webp'),
+      thumb: publicAsset('evidence/portfolio/sdk-monitor-720.webp'),
       alt: '友谊时光 EBI / CRM 脱敏复现界面，展示多地区 SDK 实时异常事件监控图表与下钻导航',
       caption: '支持多发行地区切换、平台/粒度/指标口径筛选与 4 组实时异常趋势堆叠柱状图，点击时段即可下钻设备分布。',
       provenance: '脱敏功能复现 · SQLite 固定模拟样本',
@@ -598,7 +606,8 @@ export const analyticsCase = {
       id: 'ebi-user-query',
       title: '单用户行为查询 · 7 模块局部状态边界',
       tag: '02 页面级 Store 治理',
-      src: publicAsset('evidence/portfolio/ebi-user-query.jpg'),
+      src: publicAsset('evidence/portfolio/ebi-user-query.webp'),
+      thumb: publicAsset('evidence/portfolio/ebi-user-query-720.webp'),
       alt: '单用户行为查询界面，展示公共设备与日期条件上提，以及 7 类行为模块独立筛选、列配置与首次展开按需加载',
       caption: '同一设备的 7 类行为同页展示：公共日期与设备 ID 上提，各模块独立维护筛选、分页与列配置，未展开模块延迟加载。',
       provenance: '脱敏功能复现 · SQLite 固定模拟样本',
@@ -608,7 +617,8 @@ export const analyticsCase = {
       id: 'crm-activities',
       title: 'CRM 活动与抽奖配置 · 奖品树规则校验',
       tag: '03 配置化表单与校验治理',
-      src: publicAsset('evidence/portfolio/crm-activities.jpg'),
+      src: publicAsset('evidence/portfolio/crm-activities.webp'),
+      thumb: publicAsset('evidence/portfolio/crm-activities-720.webp'),
       alt: 'CRM 活动与抽奖配置界面，展示活动配置列表与奖品树概率校验联动说明',
       caption: '三步向导配置奖品树并保留各节点编辑草稿，覆盖产品组总概率 ≤ 100%、SKU、库存与限领等复杂业务校验。',
       provenance: '脱敏功能复现 · SQLite 固定模拟样本',
@@ -720,6 +730,7 @@ export const liveshopCase = {
       title: '首页发现流与创作者推荐',
       tag: '01 首页 · /pages/index',
       src: publicAsset('evidence/liveshop/app-home.webp'),
+      thumb: publicAsset('evidence/liveshop/app-home-720.webp'),
       alt: 'LiveShop uni-app H5 390px 首页截图，展示搜索筛选栏、横向在线用户头像栏与创作者推荐卡片',
       caption:
         '整合搜索入口与筛选弹窗（FilterPopup）、横向活跃用户头像栏（UserList）及创作者推荐大卡（RecommendCard），支持在线态、认证标、相册/动态计数与一键进入个人主页；打招呼按钮受网易云信 IM 边界约束在 H5 显式提示。',
@@ -731,6 +742,7 @@ export const liveshopCase = {
       title: '用户个人主页与相册/动态双栏',
       tag: '02 个人主页 · /pages/person-page',
       src: publicAsset('evidence/liveshop/app-person.webp'),
+      thumb: publicAsset('evidence/liveshop/app-person-720.webp'),
       alt: 'LiveShop uni-app H5 390px 个人主页截图，展示顶部背景、头像、在线状态、关注按钮、粉丝统计及 Photos 九宫格',
       caption:
         '同时兼容「本人主页（Edit Profile + 相册上传）」与「他人主页（Follow/Followed 切换）」，支持吸顶紧凑头栏、关注/粉丝统计与 Photos / Updates 双 Tab 切换。',
@@ -742,6 +754,7 @@ export const liveshopCase = {
       title: '海外第三方登录入口',
       tag: '03 登录页 · /pages/login',
       src: publicAsset('evidence/liveshop/app-login.webp'),
+      thumb: publicAsset('evidence/liveshop/app-login-720.webp'),
       alt: 'LiveShop uni-app H5 390px 登录页截图，展示品牌视觉、Google 与 X 登录按钮以及 H5 Mock 演示横幅',
       caption:
         '读取 /Auth/config 动态渲染 Google 与 X 登录入口；原生端针对 X 授权拦截限制切换系统浏览器 OAuth 并在 onShow 解析回跳参数，H5 演示采用模拟会话流转。',
@@ -753,6 +766,7 @@ export const liveshopCase = {
       title: '海外社交动态流与预约活动',
       tag: '04 社区页 · /pages/community',
       src: publicAsset('evidence/liveshop/app-community.webp'),
+      thumb: publicAsset('evidence/liveshop/app-community-720.webp'),
       alt: 'LiveShop uni-app H5 390px 社区页截图，展示活动广告轮播、拼团/众筹预约卡片、Recommend/Follow 切换与图文动态',
       caption:
         '整合广告位轮播（SwiperAd）、后台下发的拼团/众筹预约活动卡片，以及 Recommend / Follow 双流图文动态与本地点赞状态联动。',
@@ -764,6 +778,7 @@ export const liveshopCase = {
       title: '商城类目与商品列表',
       tag: '05 商城页 · /pages/shop',
       src: publicAsset('evidence/liveshop/app-shop.webp'),
+      thumb: publicAsset('evidence/liveshop/app-shop-720.webp'),
       alt: 'LiveShop uni-app H5 390px 商城页截图，展示用户头部、快捷入口、商品类目 Tab 与双列商品卡片',
       caption:
         '通过字典接口 GOODS_CLASS 动态加载商品分类 Tab，双列瀑布流展示纯金币、纯积分及积分+金币组合定价商品，保留完整 TabBar 导航结构。',
@@ -775,6 +790,7 @@ export const liveshopCase = {
       title: '商品详情、SKU 规格与地址联动',
       tag: '06 商品详情 · /pages/shopDetail',
       src: publicAsset('evidence/liveshop/app-detail.webp'),
+      thumb: publicAsset('evidence/liveshop/app-detail-720.webp'),
       alt: 'LiveShop uni-app H5 390px 商品详情页截图，展示商品轮播图、价格、规格选择行、海外地址与商品介绍',
       caption:
         '支持多图轮播、SKU 规格组合查询（/Product/details/spec）与海外多级收货地址选择弹窗；点击确认时在 H5 演示中显式提示未接真实支付网关。',
@@ -786,6 +802,7 @@ export const liveshopCase = {
       title: '五态订单列表与待支付倒计时',
       tag: '07 订单页 · /pages/order',
       src: publicAsset('evidence/liveshop/app-order.webp'),
+      thumb: publicAsset('evidence/liveshop/app-order-720.webp'),
       alt: 'LiveShop uni-app H5 390px 我的订单页截图，展示 To Pay/To Ship/Shipped/Finished/Returns 五个状态标签、待支付倒计时与取消按钮',
       caption:
         '覆盖 To Pay / To Ship / Shipped / Finished / Returns 完整状态分栏，待支付卡片内置倒计时与取消防抖交互，与运营后台订单状态流转形成前后呼应。',
@@ -837,7 +854,8 @@ export const liveshopCase = {
       id: 'liveshop-orders',
       title: '商品订单管理 · 筛选、发货与退款流转',
       tag: '运营后台 · 交易订单与权限导航',
-      src: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
+      src: publicAsset('evidence/portfolio/liveshop-orders.webp'),
+      thumb: publicAsset('evidence/portfolio/liveshop-orders-720.webp'),
       alt: 'LiveShop 海外社交电商后台商品订单页面，展示用户 ID、支付金币、支付积分、付款时间、订单状态与动态权限菜单',
       caption: '涵盖商品/拼团/众筹/充值四类订单视图，结合用户 ID、订单状态与时间窗检索，并支持发货与退款状态持久化。',
       provenance: '原始历史后台界面 · 本地 SQLite 合成样本',

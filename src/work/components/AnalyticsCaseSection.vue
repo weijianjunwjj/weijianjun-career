@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppIcon from '../../components/AppIcon.vue'
+import LazyImg from '../../components/LazyImg.vue'
 import type { LightboxItem } from '../../components/MediaLightbox.vue'
 import { links } from '../../data/links.ts'
 import CaseValueStrip from './CaseValueStrip.vue'
@@ -103,7 +104,7 @@ function openGallery(startIndex: number, event: MouseEvent) {
               :aria-label="`放大查看 ${activeShot.title}`"
               @click="openGallery(activeIdx, $event)"
             >
-              <img :src="activeShot.src" :alt="activeShot.alt" width="1320" height="880" />
+              <LazyImg :src="activeShot.thumb || activeShot.src" :alt="activeShot.alt" :width="1320" :height="880" />
               <span class="optical-zoom-hint">
                 <AppIcon name="expand" :size="12" />
                 <span>高清放大查验</span>
@@ -127,7 +128,7 @@ function openGallery(startIndex: number, event: MouseEvent) {
                 :class="{ 'is-active': activeIdx === idx }"
                 @click="activeIdx = idx"
               >
-                <img :src="shot.src" :alt="shot.title" width="88" height="56" />
+                <LazyImg :src="shot.thumb || shot.src" :alt="shot.title" :width="88" :height="56" />
                 <span class="thumb-meta">
                   <span class="mono thumb-tag">{{ shot.tag }}</span>
                   <span class="thumb-title">{{ shot.title }}</span>

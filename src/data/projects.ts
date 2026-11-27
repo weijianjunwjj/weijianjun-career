@@ -11,7 +11,9 @@ export interface HeroStageItem {
   subtitle: string
   provenance: string
   image: string
+  thumb?: string
   secondaryImage?: string
+  secondaryThumb?: string
   layout: 'dual' | 'desktop'
   alt: string
   secondaryAlt?: string
@@ -23,6 +25,7 @@ export interface HeroStageItem {
 export interface GatewayAppPreview {
   label: string
   src: string
+  thumb?: string
   alt: string
   provenance: string
 }
@@ -39,8 +42,10 @@ export interface GatewayProject {
   metricsOrDecision: string[]
   stack: string[]
   primaryImage: string
+  primaryThumb?: string
   primaryAlt: string
   secondaryImage?: string
+  secondaryThumb?: string
   secondaryAlt?: string
   appPreviews?: GatewayAppPreview[]
   provenance: string
@@ -75,7 +80,8 @@ export const heroStageItems: HeroStageItem[] = [
     title: '友谊时光 · EBI 行为分析与 SDK 监控',
     subtitle: 'Vue 2.6 页面级 Store 治边界 + Webpack 5 缓存 300s → 30s',
     provenance: '脱敏功能复现（SQLite 固定样本）',
-    image: publicAsset('evidence/portfolio/sdk-monitor.jpg'),
+    image: publicAsset('evidence/portfolio/sdk-monitor.webp'),
+    thumb: publicAsset('evidence/portfolio/sdk-monitor-720.webp'),
     layout: 'desktop',
     alt: '友谊时光 EBI / CRM 脱敏复现界面，展示多地区 SDK 实时异常事件监控图表与下钻导航',
     highlight: '根治 Vue 2.6 RefImpl 失活并抽象 3 个 npm 开源包；统一 Webpack 5 提效 10 倍。',
@@ -89,7 +95,8 @@ export const heroStageItems: HeroStageItem[] = [
     title: '企业级低代码平台 · 物料与数据层',
     subtitle: '4 类图表统一数据层 + O(n) 多维透视 + 字段权限与 CRUD 轮询',
     provenance: '脱敏独立复现（可实时交互沙盒）',
-    image: publicAsset('evidence/portfolio/lowcode-workbench.jpg'),
+    image: publicAsset('evidence/portfolio/lowcode-workbench.webp'),
+    thumb: publicAsset('evidence/portfolio/lowcode-workbench-720.webp'),
     layout: 'desktop',
     alt: '企业级低代码平台独立复现沙盒，左侧展示设计态属性面板，右侧展示多维透视堆叠柱状图与查询 JSON',
     highlight: '在平台既有基座上重构统一图表数据层（+365 / −735 行），闭环导入映射与轮询。',
@@ -105,8 +112,10 @@ export const heroStageItems: HeroStageItem[] = [
     title: 'LiveShop 海外社交电商 App × 后台',
     subtitle: 'uni-app 7 屏核心流程 + 海外 OAuth / PayPal + 109 接口覆测',
     provenance: '历史源码运行 · 本地 SQLite & H5 Mock',
-    image: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
+    image: publicAsset('evidence/portfolio/liveshop-orders.webp'),
+    thumb: publicAsset('evidence/portfolio/liveshop-orders-720.webp'),
     secondaryImage: publicAsset('evidence/liveshop/app-home.webp'),
+    secondaryThumb: publicAsset('evidence/liveshop/app-home-720.webp'),
     layout: 'dual',
     alt: 'LiveShop 海外社交电商管理后台商品订单页，展示组合支付、订单状态与权限菜单',
     secondaryAlt: 'LiveShop uni-app 客户端首页发现流与创作者推荐界面（本地 H5 Mock 演示数据）',
@@ -133,8 +142,10 @@ export const gatewayProjects: GatewayProject[] = [
     ],
     stack: ['微信原生小程序', '微信支付分', 'WebSocket', 'Vue 3 / Pinia'],
     primaryImage: publicAsset('evidence/courier/admin-orders.webp'),
+    primaryThumb: publicAsset('evidence/courier/admin-orders-720.webp'),
     primaryAlt: '逍遥邮运营后台订单管理界面（Mock 数据 · 原始历史后台）',
     secondaryImage: publicAsset('evidence/courier/mini-success.webp'),
+    secondaryThumb: publicAsset('evidence/courier/mini-success-720.webp'),
     secondaryAlt: '逍遥邮微信小程序先享后付服务通知与下单成功真机截图',
     provenance: '历史真机脱敏截图 & 原始历史后台 Mock 运行截图',
     workHref: links.workCourier,
@@ -159,9 +170,11 @@ export const gatewayProjects: GatewayProject[] = [
       '排查子包 webpack@4 导致缓存失效与 Jenkins OOM，resolutions 统一 Webpack 5 提效 300s → 30s',
     ],
     stack: ['Vue 2.6', 'single-spa', 'Webpack 5', 'ECharts / VXE Table'],
-    primaryImage: publicAsset('evidence/portfolio/sdk-monitor.jpg'),
+    primaryImage: publicAsset('evidence/portfolio/sdk-monitor.webp'),
+    primaryThumb: publicAsset('evidence/portfolio/sdk-monitor-720.webp'),
     primaryAlt: '友谊时光 EBI / CRM 实时异常事件监控脱敏复现截图',
-    secondaryImage: publicAsset('evidence/portfolio/ebi-user-query.jpg'),
+    secondaryImage: publicAsset('evidence/portfolio/ebi-user-query.webp'),
+    secondaryThumb: publicAsset('evidence/portfolio/ebi-user-query-720.webp'),
     secondaryAlt: '友谊时光单用户行为查询 7 模块独立局部状态脱敏复现截图',
     provenance: '脱敏功能复现（SQLite 固定模拟样本，非生产数据）',
     workHref: links.workAnalytics,
@@ -183,7 +196,8 @@ export const gatewayProjects: GatewayProject[] = [
       'CRUD 异步导入并发轮询（Promise.allSettled）自动停表 + 审批节点字段权限合流隐藏',
     ],
     stack: ['Vue 3', 'Schema 物料协议', 'ECharts', '异步轮询'],
-    primaryImage: publicAsset('evidence/portfolio/lowcode-workbench.jpg'),
+    primaryImage: publicAsset('evidence/portfolio/lowcode-workbench.webp'),
+    primaryThumb: publicAsset('evidence/portfolio/lowcode-workbench-720.webp'),
     primaryAlt: '企业级低代码平台独立复现交互沙盒，展示设计态属性面板、多维透视堆叠柱状图与查询 JSON',
     provenance: '脱敏独立复现（本地模拟样本，原平台代码不公开）',
     workHref: links.workLowcode,
@@ -205,32 +219,38 @@ export const gatewayProjects: GatewayProject[] = [
       '清晰区分本人主导与团队协作边界，TS AST 盘点并本地覆测 109 个后台唯一接口路径',
     ],
     stack: ['uni-app (Vue 3)', 'TypeScript', 'OAuth / PayPal', 'Naive UI'],
-    primaryImage: publicAsset('evidence/portfolio/liveshop-orders.jpg'),
+    primaryImage: publicAsset('evidence/portfolio/liveshop-orders.webp'),
+    primaryThumb: publicAsset('evidence/portfolio/liveshop-orders-720.webp'),
     primaryAlt: 'LiveShop 后台管理商品订单与金币积分结算界面（本地合成样本）',
     secondaryImage: publicAsset('evidence/liveshop/app-home.webp'),
+    secondaryThumb: publicAsset('evidence/liveshop/app-home-720.webp'),
     secondaryAlt: 'LiveShop uni-app 客户端首页发现流与创作者推荐界面（本地 H5 Mock 演示数据）',
     appPreviews: [
       {
         label: '首页发现',
         src: publicAsset('evidence/liveshop/app-home.webp'),
+        thumb: publicAsset('evidence/liveshop/app-home-720.webp'),
         alt: 'LiveShop App 首页发现流与创作者推荐界面（本地 H5 Mock 演示）',
         provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
       },
       {
         label: '个人主页',
         src: publicAsset('evidence/liveshop/app-person.webp'),
+        thumb: publicAsset('evidence/liveshop/app-person-720.webp'),
         alt: 'LiveShop App 创作者个人主页与相册/动态双栏界面（本地 H5 Mock 演示）',
         provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
       },
       {
         label: '商城商品',
         src: publicAsset('evidence/liveshop/app-shop.webp'),
+        thumb: publicAsset('evidence/liveshop/app-shop-720.webp'),
         alt: 'LiveShop App 商城类目与双列商品列表界面（本地 H5 Mock 演示）',
         provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
       },
       {
         label: '五态订单',
         src: publicAsset('evidence/liveshop/app-order.webp'),
+        thumb: publicAsset('evidence/liveshop/app-order-720.webp'),
         alt: 'LiveShop App 五态订单列表与待支付倒计时界面（本地 H5 Mock 演示）',
         provenance: '原始 uni-app 源码 H5 视图 · 本地 Mock 数据',
       },
@@ -330,11 +350,17 @@ export const novaWing = {
     },
   ],
   demo: {
-    src: publicAsset('projects/nova-wing/demo.mp4'),
+    src: publicAsset('projects/nova-wing/demo-preview.mp4'),
+    fullSrc: publicAsset('projects/nova-wing/demo.mp4'),
     poster: publicAsset('projects/nova-wing/demo-poster.webp'),
-    description: '真实原始录屏 · NovaWing 完整运行过程（按需加载）',
-    duration: '13:01',
-    originalDuration: '13:01.75',
+    description: '75 秒 720p 精华预览 · 按需加载，默认不消耗首屏带宽',
+    duration: '1:15',
+    originalDuration: '13:01',
+    fullDescription: '真实原始录屏 · NovaWing 完整运行过程（按需加载）',
+    switchFullLabel: '切换 13 分钟完整原始录屏',
+    switchPreviewLabel: '切回 75 秒精华预览',
+    // 后续可替换为 B 站播放页；空字符串表示暂未接入。
+    bilibiliUrl: '',
   },
   links: {
     repo: links.novaRepo,

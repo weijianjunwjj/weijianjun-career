@@ -17,6 +17,11 @@ export interface LightboxItem {
   provenance?: string
   alt?: string
   chapters?: LightboxChapter[]
+  fullSrc?: string
+  previewSrc?: string
+  previewLabel?: string
+  fullLabel?: string
+  bilibiliUrl?: string
 }
 
 const props = defineProps<{
@@ -36,6 +41,19 @@ const currentIndex = ref(0)
 
 const activeItem = computed<LightboxItem | null>(() => props.items[currentIndex.value] ?? null)
 const canNavigate = computed(() => props.items.length > 1)
+const videoSrcOverride = ref<string | null>(null)
+
+const activeVideoSrc = computed(() => {
+  const item = activeItem.value
+  if (!item || item.kind !== 'video') return ''
+  return videoSrcOverride.value || item.src
+})
+
+const isFullVideo = computed(() => {
+  const item = activeItem.value
+  if (!item?.fullSrc) return false
+  return activeVideoSrc.value === item.fullSrc
+})
 
 function handleGlobalKeydown(event: KeyboardEvent) {
   if (!props.open) return
@@ -53,6 +71,7 @@ watch(
   () => [props.open, props.startIndex] as const,
   async ([isOpen, idx]) => {
     currentIndex.value = Math.max(0, Math.min(idx, Math.max(0, props.items.length - 1)))
+    videoSrcOverride.value = null
     if (typeof window !== 'undefined') {
       window.removeEventListener('keydown', handleGlobalKeydown)
       if (isOpen) {
@@ -101,7 +120,13 @@ function handleBackdropClick(event: MouseEvent) {
 function step(delta: number) {
   if (!canNavigate.value) return
   videoRef.value?.pause()
+  videoSrcOverride.value = null
   currentIndex.value = (currentIndex.value + delta + props.items.length) % props.items.length
+}
+
+function switchVideo(nextSrc: string) {
+  videoRef.value?.pause()
+  videoSrcOverride.value = nextSrc
 }
 
 function seekChapter(seconds: number) {
@@ -186,14 +211,41 @@ function handleKeydown(event: KeyboardEvent) {
         <div v-else class="lightbox-video-wrap">
           <video
             ref="videoRef"
-            :key="activeItem.src"
+            :key="activeVideoSrc"
             class="lightbox-video"
             controls
             playsinline
             preload="metadata"
             :poster="activeItem.poster"
-            :src="activeItem.src"
+            :src="activeVideoSrc"
           />
+          <div v-if="activeItem.fullSrc || activeItem.bilibiliUrl" class="lightbox-video-switch">
+            <button
+              v-if="activeItem.fullSrc && !isFullVideo"
+              type="button"
+              class="btn btn-ghost btn-sm"
+              @click="switchVideo(activeItem.fullSrc)"
+            >
+              {{ activeItem.fullLabel || '切换完整原始录屏' }}
+            </button>
+            <button
+              v-if="activeItem.previewSrc && isFullVideo"
+              type="button"
+              class="btn btn-ghost btn-sm"
+              @click="switchVideo(activeItem.previewSrc)"
+            >
+              {{ activeItem.previewLabel || '切回精华预览' }}
+            </button>
+            <a
+              v-if="activeItem.bilibiliUrl"
+              :href="activeItem.bilibiliUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-link btn-sm"
+            >
+              B 站观看
+            </a>
+          </div>
           <div v-if="activeItem.chapters?.length" class="lightbox-chapters">
             <span class="mono chapters-label">分章跳转</span>
             <button
@@ -307,6 +359,12 @@ function handleKeydown(event: KeyboardEvent) {
   width: 100%;
   display: grid;
   gap: 14px;
+}
+
+.lightbox-video-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .lightbox-video {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '../components/AppIcon.vue'
+import LazyImg from '../components/LazyImg.vue'
 import type { LightboxItem } from '../components/MediaLightbox.vue'
 import { links } from '../data/links.ts'
 import { gatewayProjects, type GatewayProject } from '../data/projects.ts'
@@ -51,6 +52,10 @@ const courier = gatewayProjects[0]
 const analytics = gatewayProjects[1]
 const lowcode = gatewayProjects[2]
 const liveshop = gatewayProjects[3]
+
+function cardSrc(thumb: string | undefined, image: string | undefined) {
+  return thumb || image || ''
+}
 </script>
 
 <template>
@@ -122,12 +127,11 @@ const liveshop = gatewayProjects[3]
                 aria-label="放大查看逍遥邮运营后台订单管理截图"
                 @click="inspectProject(courier, $event, 0)"
               >
-                <img
-                  :src="courier.primaryImage"
+                <LazyImg
+                  :src="cardSrc(courier.primaryThumb, courier.primaryImage)"
                   :alt="courier.primaryAlt"
-                  loading="lazy"
-                  width="1320"
-                  height="820"
+                  :width="1320"
+                  :height="820"
                 />
                 <span class="optical-zoom-hint">
                   <AppIcon name="expand" :size="12" />
@@ -143,12 +147,11 @@ const liveshop = gatewayProjects[3]
                 aria-label="放大查看逍遥邮微信小程序先享后付成功截图"
                 @click="inspectProject(courier, $event, 1)"
               >
-                <img
-                  :src="courier.secondaryImage"
-                  :alt="courier.secondaryAlt"
-                  loading="lazy"
-                  width="420"
-                  height="910"
+                <LazyImg
+                  :src="cardSrc(courier.secondaryThumb, courier.secondaryImage)"
+                  :alt="courier.secondaryAlt || courier.primaryAlt"
+                  :width="420"
+                  :height="910"
                 />
               </button>
             </div>
@@ -205,12 +208,11 @@ const liveshop = gatewayProjects[3]
                   aria-label="放大查看友谊时光 SDK 异常监控复现截图"
                   @click="inspectProject(analytics, $event, 0)"
                 >
-                  <img
-                    :src="analytics.primaryImage"
+                  <LazyImg
+                    :src="cardSrc(analytics.primaryThumb, analytics.primaryImage)"
                     :alt="analytics.primaryAlt"
-                    loading="lazy"
-                    width="1320"
-                    height="920"
+                    :width="1320"
+                    :height="920"
                   />
                   <span class="optical-zoom-hint">
                     <AppIcon name="expand" :size="12" />
@@ -229,12 +231,11 @@ const liveshop = gatewayProjects[3]
                   aria-label="放大查看单用户行为查询 7 模块复现截图"
                   @click="inspectProject(analytics, $event, 1)"
                 >
-                  <img
-                    :src="analytics.secondaryImage"
-                    :alt="analytics.secondaryAlt"
-                    loading="lazy"
-                    width="1320"
-                    height="880"
+                  <LazyImg
+                    :src="cardSrc(analytics.secondaryThumb, analytics.secondaryImage)"
+                    :alt="analytics.secondaryAlt || analytics.primaryAlt"
+                    :width="1320"
+                    :height="880"
                   />
                   <span class="optical-zoom-hint">
                     <AppIcon name="expand" :size="12" />
@@ -267,12 +268,11 @@ const liveshop = gatewayProjects[3]
               aria-label="放大查看企业级低代码平台交互沙盒运行截图"
               @click="inspectProject(lowcode, $event, 0)"
             >
-              <img
-                :src="lowcode.primaryImage"
+              <LazyImg
+                :src="cardSrc(lowcode.primaryThumb, lowcode.primaryImage)"
                 :alt="lowcode.primaryAlt"
-                loading="lazy"
-                width="1320"
-                height="920"
+                :width="1320"
+                :height="920"
               />
               <span class="optical-zoom-hint">
                 <AppIcon name="expand" :size="12" />
@@ -328,12 +328,11 @@ const liveshop = gatewayProjects[3]
                 aria-label="放大查看 LiveShop 管理后台商品订单截图"
                 @click="inspectProject(liveshop, $event, 0)"
               >
-                <img
-                  :src="liveshop.primaryImage"
+                <LazyImg
+                  :src="cardSrc(liveshop.primaryThumb, liveshop.primaryImage)"
                   :alt="liveshop.primaryAlt"
-                  loading="lazy"
-                  width="1320"
-                  height="920"
+                  :width="1320"
+                  :height="920"
                 />
                 <span class="optical-zoom-hint">
                   <AppIcon name="expand" :size="12" />
@@ -349,12 +348,11 @@ const liveshop = gatewayProjects[3]
                 aria-label="放大查看 LiveShop App 7 屏界面预览"
                 @click="inspectProject(liveshop, $event, 1)"
               >
-                <img
-                  :src="liveshop.secondaryImage"
-                  :alt="liveshop.secondaryAlt"
-                  loading="lazy"
-                  width="390"
-                  height="844"
+                <LazyImg
+                  :src="cardSrc(liveshop.secondaryThumb, liveshop.secondaryImage)"
+                  :alt="liveshop.secondaryAlt || liveshop.primaryAlt"
+                  :width="390"
+                  :height="844"
                 />
               </button>
             </div>
