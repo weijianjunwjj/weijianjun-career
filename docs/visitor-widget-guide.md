@@ -31,10 +31,10 @@
 
 真实二维码**不要**提交进未跟踪的 `assets/`，放入站点 public：
 
-- 主站：`public/contact/wechat-qr.webp` → 运行时 `/contact/wechat-qr.webp`
-- 子站：`work/public/contact/wechat-qr.webp` → 运行时 `/contact/wechat-qr.webp`
+- 主站：`public/contact/wechat-qr.jpg` → 运行时 `/contact/wechat-qr.jpg`
+- 子站：`work/public/contact/wechat-qr.jpg` → 运行时 `/contact/wechat-qr.jpg`
 
-文件尚未放入或图片 `onerror` 时不显示破图，改为占位提示 +「复制微信号 / 电话」。禁止使用中邮通快递的 `mini-qr.png`。
+图片 `onerror` 时不显示破图，改为占位提示 +「复制微信号 / 电话」。禁止使用中邮通快递的 `mini-qr.png`。真实文件使用 JPEG，不要转成有损 webp。
 
 ## 站长排除（免 DevTools）
 
@@ -99,7 +99,7 @@ loopback 默认静默。
 点击后展开深空玻璃直联卡片（邮箱、微信号取自 `src/data/profile.ts`）：
 
 1. `mailto:` 一键发邮件（打开 Mail），`subject` / `body` 自动编码当前项目中文名；不设 `target="_blank"`。旁配「复制邮箱」，点击后约 2 秒显示「已复制」。
-2. 个人微信二维码槽位 `publicAsset('contact/wechat-qr.webp')`。「复制微信号」复制电话 `18352517082`。
+2. 个人微信二维码槽位 `publicAsset('contact/wechat-qr.jpg')`。「复制微信号」复制电话 `18352517082`。
 3. 欢迎关闭后，左下角极克制胶囊「联系魏建军」可再次打开卡片。站长排除开启时该按钮绝不渲染。
 
 `Esc` 关闭、`role="dialog"`、尊重 `prefers-reduced-motion`。390px 窄屏与桌面均停在左下，不遮挡主按钮。

@@ -281,7 +281,10 @@ const attached: Array<{
 
 function envValue(name: 'VITE_BAIDU_HM_ID_MAIN' | 'VITE_BAIDU_HM_ID_WORK'): string {
   try {
-    const value = import.meta.env?.[name]
+    const value =
+      name === 'VITE_BAIDU_HM_ID_MAIN'
+        ? import.meta.env.VITE_BAIDU_HM_ID_MAIN
+        : import.meta.env.VITE_BAIDU_HM_ID_WORK
     return typeof value === 'string' ? value : ''
   } catch {
     return ''
@@ -433,7 +436,7 @@ function showContactCard(host: VisitorHost, ctx?: ProjectCtx) {
   qr.setAttribute('alt', '魏建军个人微信二维码')
   qr.setAttribute('width', '168')
   qr.setAttribute('height', '168')
-  qr.src = publicAsset('contact/wechat-qr.webp')
+  qr.src = publicAsset('contact/wechat-qr.jpg')
 
   const placeholder = host.document.createElement('p')
   placeholder.setAttribute('data-field', 'wechat-placeholder')

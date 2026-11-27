@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -717,7 +718,7 @@ test('openChat opens contact card with mailto, copy, and wechat onerror fallback
   assert.equal(findAction(host, 'copy-email').textContent, '已复制')
 
   const qr = findField(host, 'wechat-qr')
-  assert.equal(qr.src, '/contact/wechat-qr.webp')
+  assert.equal(qr.src, '/contact/wechat-qr.jpg')
   assert.doesNotMatch(qr.src, /mini-qr/)
   qr.triggerError()
   assert.equal(qr.hidden, true)
@@ -734,6 +735,23 @@ test('openChat opens contact card with mailto, copy, and wechat onerror fallback
   assert.ok(host.document.getElementById(CONTACT_LAUNCHER_ID))
   findAction(host, 'launcher').click()
   assert.ok(host.document.getElementById(CONTACT_CARD_ID))
+})
+
+test('wechat qr jpg exists on both sites and both dist trees with identical SHA-256', async () => {
+  const files = [
+    '../public/contact/wechat-qr.jpg',
+    '../work/public/contact/wechat-qr.jpg',
+    '../dist/contact/wechat-qr.jpg',
+    '../dist-work/contact/wechat-qr.jpg',
+  ]
+  const hashes = []
+  for (const rel of files) {
+    const data = await readFile(new URL(rel, import.meta.url))
+    assert.equal(data[0], 0xff, `${rel} must be a JPEG`)
+    assert.equal(data[1], 0xd8, `${rel} must be a JPEG`)
+    hashes.push(createHash('sha256').update(data).digest('hex'))
+  }
+  assert.equal(new Set(hashes).size, 1)
 })
 
 test('source, env, workflow and built html have zero tawk/pop800 residue and no static remote scripts', async () => {
